@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
@@ -682,192 +682,27 @@ class TestSuiteViewSet(viewsets.ModelViewSet):
     def execute(self, request, pk=None):
         """执行测试套件"""
         test_suite = self.get_object()
-        
+
         try:
-            # 创建执行记录
-            execution = TestExecution.objects.create(
-                test_suite=test_suite,
-                status='RUNNING',
-                start_time=timezone.now(),
-                executed_by=request.user
+            from .utils import execute_test_suite
+            result = execute_test_suite(
+                test_suite, test_suite.environment, request.user
             )
-            
-            # 获取套件中的请求
-            suite_requests = TestSuiteRequest.objects.filter(
-                test_suite=test_suite,
-                enabled=True
-            ).order_by('order')
-            
-            execution.total_requests = suite_requests.count()
-            execution.save()
-            
-            results = []
-            passed_count = 0
-            failed_count = 0
-            
-            # 创建变量解析器
-            resolver = VariableResolver()
 
-            # 执行每个请求
-            for suite_request in suite_requests:
-                api_request = suite_request.request
-                
-                try:
-                    # 解析环境变量
-                    variables = {}
-                    if test_suite.environment:
-                        variables.update(test_suite.environment.variables)
-                    
-                    # 替换URL中的变量（先解析动态函数，再替换环境变量）
-                    url = self._replace_variables(api_request.url, variables)
-                    url = resolver.resolve(url)
+            if result['success']:
+                execution = TestExecution.objects.get(id=result['execution_id'])
+                log_operation(
+                    operation_type='execute',
+                    resource_type='suite',
+                    resource_id=test_suite.id,
+                    resource_name=test_suite.name,
+                    user=request.user
+                )
+                return Response(TestExecutionSerializer(execution).data)
+            else:
+                return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
 
-                    # 准备请求头
-                    headers = {}
-                    # 支持新的数组格式和旧的对象格式
-                    if isinstance(api_request.headers, list):
-                        # 新的数组格式 [{"key": "Authorization", "value": "Bearer {{token}}", "enabled": true, "description": "..."}]
-                        for header_item in api_request.headers:
-                            if header_item.get('enabled', True) and header_item.get('key'):
-                                key = header_item['key']
-                                value = self._replace_variables(str(header_item.get('value', '')), variables)
-                                value = resolver.resolve(value)
-                                headers[key] = value
-                    else:
-                        # 旧的对象格式 {"Authorization": "Bearer {{token}}"}
-                        headers = api_request.headers.copy()
-                        for key, value in headers.items():
-                            headers[key] = self._replace_variables(str(value), variables)
-                            headers[key] = resolver.resolve(headers[key])
-
-                    params = api_request.params.copy()
-                    for key, value in params.items():
-                        params[key] = self._replace_variables(str(value), variables)
-                        params[key] = resolver.resolve(params[key])
-
-                    body_data = None
-                    if api_request.body and api_request.method in ['POST', 'PUT', 'PATCH']:
-                        if api_request.body.get('type') == 'json':
-                            body_data = api_request.body.get('data', {})
-                            body_data = self._replace_variables_in_dict(body_data, variables)
-                            body_data = self._resolve_variables_in_dict(body_data, resolver)
-
-                    # 执行请求
-                    start_time = time.time()
-                    response = requests.request(
-                        method=api_request.method,
-                        url=url,
-                        headers=headers,
-                        params=params,
-                        json=body_data,
-                        timeout=30
-                    )
-                    end_time = time.time()
-                    response_time = (end_time - start_time) * 1000
-                    
-                    # 执行断言验证
-                    assertions = api_request.assertions or []
-                    # 添加响应时间到断言中
-                    for assertion in assertions:
-                        if assertion.get('type') == 'response_time':
-                            assertion['actual_time'] = response_time
-                    
-                    # 使用共享的断言执行方法
-                    assertions_results = execute_assertions(response, assertions)
-                    
-                    # 检查所有断言是否通过
-                    passed = True
-                    error_message = ''
-                    
-                    # 检查套件请求的断言
-                    for assertion in suite_request.assertions:
-                        # 简单的状态码断言
-                        if assertion.get('type') == 'status_code':
-                            expected = assertion.get('value')
-                            if response.status_code != expected:
-                                passed = False
-                                error_message = f'状态码断言失败: 期望 {expected}, 实际 {response.status_code}'
-                                break
-                    
-                    # 检查接口自身的断言
-                    if passed and assertions_results:
-                        for assertion_result in assertions_results:
-                            if not assertion_result.get('passed', True):
-                                passed = False
-                                error_message = f"断言失败: {assertion_result.get('name', '未命名断言')} - {assertion_result.get('error', '断言不通过')}"
-                                break
-                    
-                    if passed:
-                        passed_count += 1
-                    else:
-                        failed_count += 1
-                    
-                    results.append({
-                        'name': api_request.name,
-                        'method': api_request.method,
-                        'url': url,
-                        'status_code': response.status_code,
-                        'response_time': response_time,
-                        'passed': passed,
-                        'error': error_message,
-                        'assertions_results': assertions_results
-                    })
-                    
-                    # 保存请求历史
-                    RequestHistory.objects.create(
-                        request=api_request,
-                        environment=test_suite.environment,
-                        request_data={
-                            'url': url,
-                            'method': api_request.method,
-                            'headers': headers,
-                            'params': params,
-                            'body': body_data
-                        },
-                        response_data={
-                            'headers': dict(response.headers),
-                            'body': response.text,
-                            'json': response.json() if response.headers.get('content-type', '').startswith('application/json') else None
-                        },
-                        status_code=response.status_code,
-                        response_time=response_time,
-                        assertions_results=assertions_results,
-                        executed_by=request.user
-                    )
-                    
-                except Exception as e:
-                    failed_count += 1
-                    results.append({
-                        'name': api_request.name,
-                        'method': api_request.method,
-                        'url': api_request.url,
-                        'passed': False,
-                        'error': str(e)
-                    })
-            
-            # 更新执行结果
-            execution.end_time = timezone.now()
-            execution.passed_requests = passed_count
-            execution.failed_requests = failed_count
-            execution.status = 'COMPLETED' if failed_count == 0 else 'FAILED'
-            execution.results = results
-            execution.save()
-            
-            # 记录执行操作
-            log_operation(
-                operation_type='execute',
-                resource_type='suite',
-                resource_id=test_suite.id,
-                resource_name=test_suite.name,
-                user=request.user
-            )
-            
-            return Response(TestExecutionSerializer(execution).data)
-            
         except Exception as e:
-            execution.status = 'FAILED'
-            execution.end_time = timezone.now()
-            execution.save()
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_create(self, serializer):
@@ -2789,3 +2624,16 @@ URL参数: {json.dumps(request_data['params'], ensure_ascii=False)}
             return Response({'error': f'AI服务调用失败: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({'error': f'未知错误: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def import_scenario_view(request):
+    """导入 RAGFlow 生成的场景用例"""
+    from .services.scenario_import import import_scenario
+
+    result = import_scenario(request.data, request.user)
+    if result["success"]:
+        return Response(result, status=status.HTTP_201_CREATED)
+    else:
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)

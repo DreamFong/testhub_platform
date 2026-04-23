@@ -1,0 +1,396 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ragflow-testhub-scenario-v1",
+  "title": "RAGFlow → TestHub 场景用例导入契约",
+  "description": "RAGFlow Agent 生成的结构化输出，由 TestHub 导入接口消费。一个 JSON 文件对应一个测试项目下的一组场景套件。",
+
+  "type": "object",
+  "required": ["schema_version", "project", "environment", "collections", "suites"],
+  "additionalProperties": false,
+
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "契约版本号，TestHub 按版本号选择对应的解析器"
+    },
+
+    "project": {
+      "type": "object",
+      "description": "对应 TestHub ApiProject",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "项目名称",
+          "examples": ["ruoyi-vue-pro 用户管理模块"]
+        },
+        "description": {
+          "type": "string",
+          "description": "项目描述"
+        }
+      }
+    },
+
+    "environment": {
+      "type": "object",
+      "description": "对应 TestHub Environment，定义运行时所需的静态变量（如 baseUrl、tenantId）。运行时提取的变量（如 token）不需要在此声明。",
+      "required": ["name", "variables"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "环境名称",
+          "examples": ["ruoyi-dev"]
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["GLOBAL", "LOCAL"],
+          "default": "LOCAL",
+          "description": "作用域"
+        },
+        "variables": {
+          "type": "object",
+          "description": "静态环境变量键值对，可在请求中以 {{key}} 引用",
+          "additionalProperties": { "type": "string" },
+          "examples": [
+            {
+              "baseUrl": "http://81.70.235.9:48080",
+              "tenantId": "1"
+            }
+          ]
+        }
+      }
+    },
+
+    "collections": {
+      "type": "array",
+      "description": "对应 TestHub ApiCollection，用于组织请求。一个场景通常对应一个集合。",
+      "items": {
+        "$ref": "#/$defs/collection"
+      },
+      "minItems": 1
+    },
+
+    "suites": {
+      "type": "array",
+      "description": "对应 TestHub TestSuite，定义有执行顺序的场景步骤链",
+      "items": {
+        "$ref": "#/$defs/suite"
+      },
+      "minItems": 1
+    },
+
+    "metadata": {
+      "type": "object",
+      "description": "可选元数据，由 RAGFlow 附加，不影响 TestHub 导入逻辑",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "来源标识",
+          "examples": ["ragflow", "apifox", "manual"]
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "生成时间"
+        },
+        "requirement_doc": {
+          "type": "string",
+          "description": "需求文档名称/路径"
+        },
+        "api_doc": {
+          "type": "string",
+          "description": "接口文档名称/路径"
+        }
+      }
+    }
+  },
+
+  "$defs": {
+
+    "collection": {
+      "type": "object",
+      "required": ["name", "requests"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "集合名称",
+          "examples": ["用户管理接口"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "requests": {
+          "type": "array",
+          "description": "集合中的所有请求定义，同一集合内 name 必须唯一",
+          "items": {
+            "$ref": "#/$defs/request"
+          }
+        }
+      }
+    },
+
+    "request": {
+      "type": "object",
+      "description": "对应 TestHub ApiRequest，定义一个 HTTP 请求步骤",
+      "required": ["name", "method", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "请求名称，全局唯一标识。套件步骤通过此名称引用",
+          "examples": ["登录获取Token", "创建用户"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+          "description": "HTTP 方法"
+        },
+        "url": {
+          "type": "string",
+          "description": "请求 URL，支持 {{变量}} 占位符。baseUrl 等前缀应通过环境变量引用。",
+          "examples": [
+            "{{baseUrl}}/admin-api/system/auth/login",
+            "{{baseUrl}}/admin-api/system/user/get?id={{userId}}"
+          ]
+        },
+        "headers": {
+          "type": "array",
+          "description": "请求头列表",
+          "items": {
+            "$ref": "#/$defs/header"
+          },
+          "default": []
+        },
+        "params": {
+          "type": "object",
+          "description": "URL 查询参数",
+          "additionalProperties": { "type": "string" },
+          "default": {}
+        },
+        "body": {
+          "$ref": "#/$defs/body",
+          "description": "请求体定义"
+        },
+        "assertions": {
+          "type": "array",
+          "description": "断言规则列表",
+          "items": {
+            "$ref": "#/$defs/assertion"
+          },
+          "default": []
+        },
+        "variable_extractions": {
+          "type": "array",
+          "description": "变量提取规则，提取的值存入运行时上下文，后续步骤以 {{变量名}} 引用",
+          "items": {
+            "$ref": "#/$defs/extraction"
+          },
+          "default": []
+        }
+      }
+    },
+
+    "header": {
+      "type": "object",
+      "required": ["key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Header 名称",
+          "examples": ["Content-Type", "Authorization", "tenant-id"]
+        },
+        "value": {
+          "type": "string",
+          "description": "Header 值，支持 {{变量}} 占位符",
+          "examples": ["application/json", "Bearer {{token}}", "{{tenantId}}"]
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+
+    "body": {
+      "type": "object",
+      "description": "请求体（当前仅支持 JSON 类型）",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["json", "none"],
+          "default": "json",
+          "description": "请求体类型。当前执行引擎仅支持 json 和 none，其余类型待后续扩展"
+        },
+        "data": {
+          "description": "请求体 JSON 内容（type=json 时为 object 或 array）。支持 {{变量}} 和 ${动态函数()} 占位符。",
+          "examples": [
+            { "username": "admin", "password": "admin123" },
+            { "id": "{{userId}}", "name": "updated_name" }
+          ]
+        }
+      },
+      "if": { "properties": { "type": { "const": "json" } } },
+      "then": { "required": ["data"] }
+    },
+
+    "assertion": {
+      "type": "object",
+      "description": "断言规则，所有类型的期望值统一使用 expected 字段",
+      "required": ["type", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["status_code", "json_path", "contains", "header", "response_time", "equals"],
+          "description": "断言类型"
+        },
+        "name": {
+          "type": "string",
+          "description": "断言名称"
+        },
+        "expected": {
+          "description": "期望值。所有断言类型统一使用此字段。status_code→整数(200)；json_path→具体值(0/true/\"success\")；contains→子串；response_time→毫秒上限；header→期望头值；equals→精确响应文本。",
+          "examples": [0, 200, "success", true, 500]
+        },
+        "json_path": {
+          "type": "string",
+          "description": "JSONPath 表达式（type=json_path 时必填）",
+          "examples": ["$.code", "$.data.id"]
+        },
+        "header_name": {
+          "type": "string",
+          "description": "响应头名称（type=header 时必填）",
+          "examples": ["Content-Type", "X-Request-Id"]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "json_path" } } },
+          "then": { "required": ["json_path"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "header" } } },
+          "then": { "required": ["header_name"] }
+        }
+      ]
+    },
+
+    "extraction": {
+      "type": "object",
+      "description": "变量提取规则",
+      "required": ["variable", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "variable": {
+          "type": "string",
+          "description": "变量名，后续步骤以 {{变量名}} 引用",
+          "examples": ["token", "userId", "orderId"]
+        },
+        "source": {
+          "type": "string",
+          "enum": ["body", "header", "status_code"],
+          "description": "值来源"
+        },
+        "json_path": {
+          "type": "string",
+          "description": "JSONPath 表达式（source=body 时必填）",
+          "examples": ["$.data.accessToken", "$.data"]
+        },
+        "header_name": {
+          "type": "string",
+          "description": "响应头名称（source=header 时必填）",
+          "examples": ["X-Request-Id", "Authorization"]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source": { "const": "body" } } },
+          "then": { "required": ["json_path"] }
+        },
+        {
+          "if": { "properties": { "source": { "const": "header" } } },
+          "then": { "required": ["header_name"] }
+        }
+      ]
+    },
+
+    "suite": {
+      "type": "object",
+      "description": "对应 TestHub TestSuite，定义一个完整的有向测试场景",
+      "required": ["name", "steps"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "套件名称",
+          "examples": ["用户管理完整CRUD场景"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "description": "有序步骤列表。执行顺序由数组下标决定。注意：同一请求在同一个套件中只能引用一次（模型约束）。",
+          "items": {
+            "$ref": "#/$defs/step"
+          },
+          "minItems": 1
+        }
+      }
+    },
+
+    "step": {
+      "type": "object",
+      "description": "套件中的一个执行步骤，引用集合中的请求",
+      "required": ["request_name"],
+      "additionalProperties": false,
+      "properties": {
+        "request_name": {
+          "type": "string",
+          "description": "引用的请求名称（对应 collection.requests[].name），全局唯一匹配",
+          "examples": ["登录获取Token", "创建用户"]
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否启用该步骤"
+        },
+        "assertions": {
+          "type": "array",
+          "description": "步骤级断言，当前仅支持 status_code 类型。会与请求自身的断言合并执行。",
+          "items": {
+            "type": "object",
+            "required": ["type", "expected"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["status_code"],
+                "description": "步骤级断言当前仅支持 status_code"
+              },
+              "name": {
+                "type": "string"
+              },
+              "expected": {
+                "type": "integer",
+                "description": "期望的 HTTP 状态码"
+              }
+            }
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

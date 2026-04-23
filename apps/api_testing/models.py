@@ -94,6 +94,12 @@ class ApiRequest(models.Model):
     pre_request_script = models.TextField(blank=True, verbose_name='请求前脚本')
     post_request_script = models.TextField(blank=True, verbose_name='请求后脚本')
     assertions = models.JSONField(default=list, verbose_name='断言规则')
+    variable_extractions = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='变量提取规则',
+        help_text='从响应中提取变量，供后续步骤引用。格式: [{"variable": "name", "source": "body", "json_path": "$.data.token"}]',
+    )
     order = models.IntegerField(default=0, verbose_name='排序')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='创建者')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')

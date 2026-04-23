@@ -1,8 +1,66 @@
 import json
 import time
+import requests as http_client
 from django.utils import timezone
 from .models import RequestHistory
 from .variable_resolver import VariableResolver
+
+
+def extract_variables_from_response(response, extractions):
+    """从 HTTP 响应中提取变量
+
+    Args:
+        response: requests.Response 对象
+        extractions: 提取规则列表，每条规则格式:
+            {"variable": "name", "source": "body"|"header"|"status_code", "json_path": "$.data.token", "header_name": "X-Id"}
+
+    Returns:
+        dict: 变量名 → 提取值
+    """
+    if not extractions:
+        return {}
+
+    result = {}
+
+    for rule in extractions:
+        var_name = rule.get("variable")
+        source = rule.get("source", "body")
+
+        if not var_name:
+            continue
+
+        if source == "status_code":
+            result[var_name] = response.status_code
+
+        elif source == "header":
+            header_name = rule.get("header_name", "")
+            result[var_name] = response.headers.get(header_name)
+
+        elif source == "body":
+            json_path = rule.get("json_path", "")
+            value = _extract_jsonpath(response, json_path)
+            result[var_name] = value
+
+    return result
+
+
+def _extract_jsonpath(response, json_path: str):
+    """从响应体中按 JSONPath 提取值"""
+    if not json_path:
+        return None
+
+    try:
+        body = response.json()
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+    try:
+        from jsonpath_ng import parse
+
+        matches = parse(json_path).find(body)
+        return matches[0].value if matches else None
+    except Exception:
+        return None
 
 
 def execute_assertions(response, assertions):
@@ -14,7 +72,7 @@ def execute_assertions(response, assertions):
             'name': assertion.get('name', '未命名断言'),
             'type': assertion.get('type'),
             'passed': False,
-            'expected': assertion.get('expected'),
+            'expected': assertion.get('expected', assertion.get('expected_value')),
             'actual': None,
             'error': None
         }
@@ -83,7 +141,7 @@ def execute_assertions(response, assertions):
                     
             elif assertion_type == 'header':
                 header_name = assertion.get('header_name', '')
-                expected_value = assertion.get('expected_value')
+                expected_value = assertion.get('expected', assertion.get('expected_value'))
                 actual = response.headers.get(header_name)
                 passed = actual == expected_value
                 
@@ -108,8 +166,6 @@ def execute_assertions(response, assertions):
 def execute_test_suite(test_suite, environment, executed_by):
     """执行测试套件并返回结果"""
     from .models import TestExecution, RequestHistory
-    import requests
-    import time
     
     try:
         # 创建变量解析器
@@ -132,16 +188,19 @@ def execute_test_suite(test_suite, environment, executed_by):
         results = []
         passed_count = 0
         failed_count = 0
-        
+
+        # 运行时变量上下文：环境变量 + 前序步骤提取的变量
+        runtime_variables = {}
+        if environment:
+            runtime_variables.update(environment.variables)
+
         # 执行每个请求
         for suite_request in suite_requests:
             api_request = suite_request.request
-            
+
             try:
-                # 解析环境变量
-                variables = {}
-                if environment:
-                    variables.update(environment.variables)
+                # 使用运行时变量上下文
+                variables = dict(runtime_variables)
                 
                 # 替换URL中的变量（先解析动态函数，再替换环境变量）
                 url = _replace_variables(api_request.url, variables)
@@ -178,7 +237,7 @@ def execute_test_suite(test_suite, environment, executed_by):
                 
                 # 执行请求
                 start_time = time.time()
-                response = requests.request(
+                response = http_client.request(
                     method=api_request.method,
                     url=url,
                     headers=headers,
@@ -195,23 +254,17 @@ def execute_test_suite(test_suite, environment, executed_by):
                     if assertion.get('type') == 'response_time':
                         assertion['actual_time'] = response_time
                 
-                assertions_results = execute_assertions(response, assertions)
-                
+                # 合并请求级断言和步骤级断言，统一执行
+                all_assertions = list(assertions)
+                if suite_request.assertions:
+                    all_assertions.extend(suite_request.assertions)
+                assertions_results = execute_assertions(response, all_assertions)
+
                 # 检查所有断言是否通过
                 passed = True
                 error_message = ''
-                
-                # 检查套件请求的断言
-                for assertion in suite_request.assertions:
-                    if assertion.get('type') == 'status_code':
-                        expected = assertion.get('value')
-                        if response.status_code != expected:
-                            passed = False
-                            error_message = f'状态码断言失败: 期望 {expected}, 实际 {response.status_code}'
-                            break
-                
-                # 检查接口自身的断言
-                if passed and assertions_results:
+
+                if assertions_results:
                     for assertion_result in assertions_results:
                         if not assertion_result.get('passed', True):
                             passed = False
@@ -222,6 +275,12 @@ def execute_test_suite(test_suite, environment, executed_by):
                     passed_count += 1
                 else:
                     failed_count += 1
+
+                # 从响应中提取变量，合并到运行时上下文供后续步骤使用
+                extractions = getattr(api_request, 'variable_extractions', None) or []
+                if extractions:
+                    extracted = extract_variables_from_response(response, extractions)
+                    runtime_variables.update(extracted)
                 
                 results.append({
                     'name': api_request.name,
@@ -339,7 +398,7 @@ def execute_api_request(api_request, environment, executed_by):
         
         # 执行请求
         start_time = time.time()
-        response = requests.request(
+        response = http_client.request(
             method=api_request.method,
             url=url,
             headers=headers,

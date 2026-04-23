@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+
+  "project": {
+    "name": "ruoyi-vue-pro 用户管理模块",
+    "description": "基于 ruoyi-vue-pro 后台管理系统的用户管理模块 API 测试场景"
+  },
+
+  "environment": {
+    "name": "ruoyi-dev",
+    "scope": "LOCAL",
+    "variables": {
+      "baseUrl": "http://81.70.235.9:48080",
+      "tenantId": "1",
+      "adminUsername": "admin",
+      "adminPassword": "admin123"
+    }
+  },
+
+  "collections": [
+    {
+      "name": "用户管理接口",
+      "description": "包含登录、用户 CRUD 等完整链路",
+      "requests": [
+        {
+          "name": "管理员登录",
+          "description": "使用管理员账号登录，获取 accessToken 供后续步骤使用",
+          "method": "POST",
+          "url": "{{baseUrl}}/admin-api/system/auth/login",
+          "headers": [
+            { "key": "Content-Type", "value": "application/json", "enabled": true },
+            { "key": "tenant-id", "value": "{{tenantId}}", "enabled": true }
+          ],
+          "body": {
+            "type": "json",
+            "data": {
+              "username": "{{adminUsername}}",
+              "password": "{{adminPassword}}"
+            }
+          },
+          "assertions": [
+            { "type": "status_code", "name": "状态码200", "expected": 200 },
+            { "type": "json_path", "name": "code为0", "json_path": "$.code", "expected": 0 }
+          ],
+          "variable_extractions": [
+            { "variable": "token", "source": "body", "json_path": "$.data.accessToken" }
+          ]
+        },
+        {
+          "name": "创建用户",
+          "description": "创建一个新用户，提取生成的用户ID和实际用户名",
+          "method": "POST",
+          "url": "{{baseUrl}}/admin-api/system/user/create",
+          "headers": [
+            { "key": "Content-Type", "value": "application/json", "enabled": true },
+            { "key": "Authorization", "value": "Bearer {{token}}", "enabled": true },
+            { "key": "tenant-id", "value": "{{tenantId}}", "enabled": true }
+          ],
+          "body": {
+            "type": "json",
+            "data": {
+              "username": "testuser_${timestamp()}",
+              "nickname": "自动化测试用户",
+              "password": "Test@12345",
+              "mobile": "${random_phone()}",
+              "deptId": 100,
+              "postIds": [1],
+              "roleIds": [1],
+              "status": 0
+            }
+          },
+          "assertions": [
+            { "type": "status_code", "name": "状态码200", "expected": 200 },
+            { "type": "json_path", "name": "code为0", "json_path": "$.code", "expected": 0 }
+          ],
+          "variable_extractions": [
+            { "variable": "newUserId", "source": "body", "json_path": "$.data" }
+          ]
+        },
+        {
+          "name": "查询用户详情",
+          "description": "根据创建时提取的用户ID查询详情，断言响应中包含期望字段",
+          "method": "GET",
+          "url": "{{baseUrl}}/admin-api/system/user/get?id={{newUserId}}",
+          "headers": [
+            { "key": "Authorization", "value": "Bearer {{token}}", "enabled": true },
+            { "key": "tenant-id", "value": "{{tenantId}}", "enabled": true }
+          ],
+          "assertions": [
+            { "type": "status_code", "name": "状态码200", "expected": 200 },
+            { "type": "json_path", "name": "code为0", "json_path": "$.code", "expected": 0 },
+            { "type": "json_path", "name": "用户昵称正确", "json_path": "$.data.nickname", "expected": "自动化测试用户" }
+          ]
+        },
+        {
+          "name": "更新用户",
+          "description": "更新用户昵称",
+          "method": "PUT",
+          "url": "{{baseUrl}}/admin-api/system/user/update",
+          "headers": [
+            { "key": "Content-Type", "value": "application/json", "enabled": true },
+            { "key": "Authorization", "value": "Bearer {{token}}", "enabled": true },
+            { "key": "tenant-id", "value": "{{tenantId}}", "enabled": true }
+          ],
+          "body": {
+            "type": "json",
+            "data": {
+              "id": "{{newUserId}}",
+              "nickname": "自动化测试用户_已更新"
+            }
+          },
+          "assertions": [
+            { "type": "status_code", "name": "状态码200", "expected": 200 },
+            { "type": "json_path", "name": "code为0", "json_path": "$.code", "expected": 0 }
+          ]
+        },
+        {
+          "name": "删除用户",
+          "description": "删除创建的用户，完成 CRUD 闭环",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/admin-api/system/user/delete?id={{newUserId}}",
+          "headers": [
+            { "key": "Authorization", "value": "Bearer {{token}}", "enabled": true },
+            { "key": "tenant-id", "value": "{{tenantId}}", "enabled": true }
+          ],
+          "assertions": [
+            { "type": "status_code", "name": "状态码200", "expected": 200 },
+            { "type": "json_path", "name": "code为0", "json_path": "$.code", "expected": 0 }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "suites": [
+    {
+      "name": "用户管理完整CRUD场景",
+      "description": "验证用户管理的完整 CRUD 流程：登录 → 创建 → 查询 → 更新 → 删除，步骤间通过变量传递实现关联",
+      "steps": [
+        { "request_name": "管理员登录" },
+        { "request_name": "创建用户" },
+        { "request_name": "查询用户详情" },
+        { "request_name": "更新用户" },
+        { "request_name": "删除用户" }
+      ]
+    }
+  ],
+
+  "metadata": {
+    "source": "ragflow",
+    "generated_at": "2026-04-23T10:00:00Z",
+    "requirement_doc": "ruoyi用户管理需求说明书.docx",
+    "api_doc": "ruoyi-vue-pro API文档.yaml"
+  }
+}

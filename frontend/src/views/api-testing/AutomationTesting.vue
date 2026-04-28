@@ -128,15 +128,19 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column :label="$t('apiTesting.automation.assertions')" width="100">
+              <el-table-column :label="$t('apiTesting.automation.assertions')" width="120">
                 <template #default="scope">
-                  {{ $t('apiTesting.automation.assertionCount', { n: scope.row.assertions?.length || 0 }) }}
+                  <el-tooltip placement="top" :content="getAssertionSummary(scope.row)">
+                    <el-tag :type="getAssertionCount(scope.row) > 0 ? 'success' : 'info'" size="small">
+                      {{ $t('apiTesting.automation.assertionCount', { n: getAssertionCount(scope.row) }) }}
+                    </el-tag>
+                  </el-tooltip>
                 </template>
               </el-table-column>
               <el-table-column :label="$t('apiTesting.common.operation')" width="150">
                 <template #default="scope">
-                  <el-button link type="primary" @click="editAssertions(scope.row)" size="small">
-                    {{ $t('apiTesting.automation.editAssertions') }}
+                  <el-button link type="primary" @click="viewAssertions(scope.row)" size="small">
+                    {{ $t('apiTesting.automation.viewAssertions') }}
                   </el-button>
                   <el-button link type="danger" @click="removeRequest(scope.row)" size="small">
                     {{ $t('apiTesting.automation.remove') }}
@@ -301,6 +305,47 @@
       </template>
     </el-dialog>
 
+    <!-- 断言详情对话框 -->
+    <el-dialog
+      v-model="showAssertionsDialog"
+      :title="$t('apiTesting.automation.assertionDetails')"
+      width="720px"
+    >
+      <div v-if="currentSuiteRequest" class="assertion-detail">
+        <h4>{{ currentSuiteRequest.request?.name }}</h4>
+        <el-alert
+          v-if="getAssertionCount(currentSuiteRequest) === 0"
+          type="info"
+          :title="$t('apiTesting.automation.noAssertions')"
+          show-icon
+          :closable="false"
+        />
+        <el-table
+          v-else
+          :data="getAllAssertions(currentSuiteRequest)"
+          style="width: 100%"
+        >
+          <el-table-column prop="scope" :label="$t('apiTesting.automation.assertionScope')" width="110" />
+          <el-table-column prop="name" :label="$t('apiTesting.automation.assertionName')" min-width="160" />
+          <el-table-column prop="type" :label="$t('apiTesting.automation.assertionType')" width="120" />
+          <el-table-column prop="json_path" label="JSONPath" min-width="140">
+            <template #default="scope">
+              {{ scope.row.json_path || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="expected" :label="$t('apiTesting.automation.expectedValue')" min-width="120">
+            <template #default="scope">
+              {{ formatAssertionValue(scope.row.expected) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <template #footer>
+        <el-button @click="showAssertionsDialog = false">{{ $t('apiTesting.common.close') }}</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 执行结果对话框 -->
     <el-dialog
       v-model="showExecutionDialog"
@@ -347,10 +392,45 @@
             <el-table-column prop="status_code" :label="$t('apiTesting.automation.statusCode')" width="100" />
             <el-table-column prop="response_time" :label="$t('apiTesting.automation.responseTime')" width="120">
               <template #default="scope">
-                {{ scope.row.response_time?.toFixed(0) }}ms
+                {{ formatResponseTime(scope.row.response_time) }}
               </template>
             </el-table-column>
             <el-table-column prop="error" :label="$t('apiTesting.automation.errorMessage')" min-width="200" show-overflow-tooltip />
+            <el-table-column type="expand">
+              <template #default="scope">
+                <div class="assertion-results-detail">
+                  <h5>{{ $t('apiTesting.automation.assertionResults') }}</h5>
+                  <el-table
+                    v-if="scope.row.assertions_results?.length"
+                    :data="scope.row.assertions_results"
+                    size="small"
+                    style="width: 100%"
+                  >
+                    <el-table-column prop="name" :label="$t('apiTesting.automation.assertionName')" min-width="160" />
+                    <el-table-column prop="type" :label="$t('apiTesting.automation.assertionType')" width="120" />
+                    <el-table-column prop="passed" :label="$t('apiTesting.automation.result')" width="100">
+                      <template #default="assertionScope">
+                        <el-tag :type="assertionScope.row.passed ? 'success' : 'danger'" size="small">
+                          {{ assertionScope.row.passed ? $t('apiTesting.automation.status.passed') : $t('apiTesting.automation.status.failed') }}
+                        </el-tag>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="expected" :label="$t('apiTesting.automation.expectedValue')" min-width="120">
+                      <template #default="assertionScope">
+                        {{ formatAssertionValue(assertionScope.row.expected) }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="actual" :label="$t('apiTesting.automation.actualValue')" min-width="120">
+                      <template #default="assertionScope">
+                        {{ formatAssertionValue(assertionScope.row.actual) }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="error" :label="$t('apiTesting.automation.errorMessage')" min-width="160" show-overflow-tooltip />
+                  </el-table>
+                  <el-empty v-else :description="$t('apiTesting.automation.noAssertionResults')" />
+                </div>
+              </template>
+            </el-table-column>
           </el-table>
         </div>
       </div>
@@ -387,10 +467,12 @@ const executionsLoading = ref(false)
 const showCreateSuiteDialog = ref(false)
 const showAddRequestDialog = ref(false)
 const showExecutionDialog = ref(false)
+const showAssertionsDialog = ref(false)
 const editingSuite = ref(null)
 const submittingSuite = ref(false)
 const addingRequests = ref(false)
 const currentExecution = ref(null)
+const currentSuiteRequest = ref(null)
 const suiteFormRef = ref()
 const requestTreeRef = ref()
 
@@ -484,6 +566,49 @@ const getEnvironmentName = (environmentId) => {
   if (!environmentId) return t('apiTesting.automation.noEnvironment')
   const env = environments.value.find(e => e.id === environmentId)
   return env ? env.name : t('apiTesting.automation.noEnvironment')
+}
+
+const getRequestAssertions = (suiteRequest) => suiteRequest?.request?.assertions || []
+
+const getStepAssertions = (suiteRequest) => suiteRequest?.assertions || []
+
+const getAssertionCount = (suiteRequest) => {
+  return getRequestAssertions(suiteRequest).length + getStepAssertions(suiteRequest).length
+}
+
+const getAssertionSummary = (suiteRequest) => {
+  return t('apiTesting.automation.assertionSummary', {
+    request: getRequestAssertions(suiteRequest).length,
+    step: getStepAssertions(suiteRequest).length
+  })
+}
+
+const getAllAssertions = (suiteRequest) => {
+  const requestAssertions = getRequestAssertions(suiteRequest).map(assertion => ({
+    ...assertion,
+    scope: t('apiTesting.automation.requestAssertion')
+  }))
+  const stepAssertions = getStepAssertions(suiteRequest).map(assertion => ({
+    ...assertion,
+    scope: t('apiTesting.automation.stepAssertion')
+  }))
+  return [...requestAssertions, ...stepAssertions]
+}
+
+const formatAssertionValue = (value) => {
+  if (value === null || value === undefined || value === '') return '-'
+  if (typeof value !== 'object') return String(value)
+
+  try {
+    return JSON.stringify(value)
+  } catch (error) {
+    return '[Object]'
+  }
+}
+
+const formatResponseTime = (responseTime) => {
+  if (typeof responseTime !== 'number') return '-'
+  return `${responseTime.toFixed(0)}ms`
 }
 
 const loadProjects = async () => {
@@ -823,8 +948,9 @@ const updateRequestEnabled = async (suiteRequest) => {
   }
 }
 
-const editAssertions = (suiteRequest) => {
-  ElMessage.info(t('apiTesting.messages.info.featureInDevelopment'))
+const viewAssertions = (suiteRequest) => {
+  currentSuiteRequest.value = suiteRequest
+  showAssertionsDialog.value = true
 }
 
 const removeRequest = async (suiteRequest) => {

@@ -8,8 +8,8 @@ TestHub is an AI-driven test management platform built with Django 4.2 (backend)
 
 ## Common Commands
 # Activate the virtual environment(Windows)
-d:\testhub_platform\venv\Scripts\Activate.ps1
-# Activate the virtual environment(MacOS)
+.venv\Scripts\Activate.ps1
+# Activate the virtual environment(Linux/Mac)
 source .venv/bin/activate
 
 ### Backend (Django)

@@ -225,11 +225,11 @@ cd testhub_platform
 
 2. **创建虚拟环境**
 ```bash
-python -m venv venv
+python -m venv .venv
 # Windows
-venv\Scripts\activate
+.venv\Scripts\activate
 # Linux/Mac
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 3. **安装依赖**

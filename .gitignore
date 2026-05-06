@@ -71,3 +71,4 @@ Makefile
 build-multiplatform.sh
 
 .cursor
+.image

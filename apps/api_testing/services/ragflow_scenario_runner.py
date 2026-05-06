@@ -16,6 +16,20 @@ from apps.api_testing.utils import execute_test_suite
 User = get_user_model()
 
 _ALLOWED_METADATA_FIELDS = {"source", "generated_at", "requirement_doc", "api_doc"}
+_EMPTY_RETRIEVAL_ERROR = (
+    "RAGFlow 工作流检索结果为空，请检查知识库绑定、QueryRewrite、Retrieval 和 reranker 配置"
+)
+_EMPTY_RETRIEVAL_MARKERS = (
+    "未检索到相关内容",
+    "未检索到足够的 srs 或 api 文档",
+    "未检索到足够的 api 文档",
+    "检索结果为空",
+    "未找到相关文档",
+    "no relevant content retrieved",
+    "no relevant documents found",
+    "no api documentation is available",
+    "insufficient api documentation",
+)
 
 
 @dataclass
@@ -46,12 +60,26 @@ def extract_json_object(text: str) -> dict[str, Any]:
         cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
         cleaned = re.sub(r"\s*```$", "", cleaned)
 
-    start = cleaned.find("{")
-    end = cleaned.rfind("}")
-    if start == -1 or end <= start:
-        raise ValueError("RAGFlow 输出中未找到 JSON 对象")
+    decoder = json.JSONDecoder()
+    candidates: list[tuple[int, dict[str, Any]]] = []
+    valid_candidates: list[tuple[int, dict[str, Any]]] = []
+    for index, char in enumerate(cleaned):
+        if char != "{":
+            continue
+        try:
+            parsed, end = decoder.raw_decode(cleaned[index:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            candidates.append((end, parsed))
+            if _can_normalize_candidate_scenario(parsed):
+                valid_candidates.append((index, parsed))
 
-    return json.loads(cleaned[start : end + 1])
+    if valid_candidates:
+        return valid_candidates[-1][1]
+    if candidates:
+        return max(candidates, key=lambda item: item[0])[1]
+    raise ValueError("RAGFlow 输出中未找到 JSON 对象")
 
 
 def normalize_candidate_scenario(
@@ -62,7 +90,9 @@ def normalize_candidate_scenario(
     normalized = copy.deepcopy(candidate)
     report = NormalizationReport()
 
+    _hoist_nested_project_fields(normalized, report)
     _normalize_top_level_requests(normalized, report)
+    _normalize_suites(normalized, report)
     _normalize_environment(normalized, environment_variables, report)
     _normalize_metadata(normalized, report)
     _normalize_requests(normalized, report)
@@ -162,19 +192,54 @@ def generate_candidate_from_ragflow(
         timeout=60,
     )
     session_id = _extract_session_id(session)
-    completion = _post_json(
-        f"{api_base_url.rstrip('/')}/agents/{agent_id}/completions",
-        {
-            "question": question,
-            "stream": False,
-            "session_id": session_id,
-            "user_id": user_id,
-        },
-        api_key,
-        timeout=420,
-    )
-    content = _extract_completion_content(completion)
-    return extract_json_object(content)
+    prompt = question
+    last_error: Exception | None = None
+
+    for attempt in range(2):
+        completion = _post_json(
+            f"{api_base_url.rstrip('/')}/agents/{agent_id}/completions",
+            {
+                "question": prompt,
+                "stream": False,
+                "session_id": session_id,
+                "user_id": user_id,
+            },
+            api_key,
+            timeout=420,
+        )
+        content = _extract_completion_content(completion)
+        empty_retrieval_error = _detect_empty_retrieval_error(content)
+        try:
+            candidate = extract_json_object(content)
+        except (ValueError, json.JSONDecodeError) as exc:
+            last_error = ValueError(empty_retrieval_error) if empty_retrieval_error else exc
+        else:
+            if _can_normalize_candidate_scenario(candidate):
+                return candidate
+            last_error = (
+                ValueError(empty_retrieval_error)
+                if empty_retrieval_error
+                else ValueError("RAGFlow 输出的 JSON 不符合 TestHub candidate 基本结构")
+            )
+
+        if attempt == 0:
+            prompt = _build_retry_question(question)
+
+    raise ValueError(f"RAGFlow 未返回可解析的 candidate JSON: {last_error}")
+
+
+def _hoist_nested_project_fields(
+    scenario: dict[str, Any],
+    report: NormalizationReport,
+) -> None:
+    project = scenario.get("project")
+    if not isinstance(project, dict):
+        return
+
+    for key in ("environment", "requests", "suite", "suites", "collections", "metadata"):
+        if key in project and key not in scenario:
+            scenario[key] = project.pop(key)
+            report.changes.append(f"将 project.{key} 提升为顶层字段")
 
 
 def _normalize_top_level_requests(
@@ -194,12 +259,25 @@ def _normalize_top_level_requests(
         report.changes.append("将顶层 requests 移入 collections[0].requests")
 
 
+def _normalize_suites(scenario: dict[str, Any], report: NormalizationReport) -> None:
+    suite = scenario.get("suite")
+    if "suites" not in scenario and isinstance(suite, dict):
+        scenario["suites"] = [suite]
+        scenario.pop("suite", None)
+        report.changes.append("将顶层 suite 归一化为 suites 数组")
+
+
 def _normalize_environment(
     scenario: dict[str, Any],
     environment_variables: dict[str, str],
     report: NormalizationReport,
 ) -> None:
-    environment = scenario.setdefault("environment", {})
+    environment = scenario.get("environment")
+    if not isinstance(environment, dict):
+        environment = {}
+        scenario["environment"] = environment
+        report.changes.append("将 environment 归一化为对象")
+
     environment.setdefault("name", "ragflow-generated")
 
     scope = environment.get("scope")
@@ -207,7 +285,12 @@ def _normalize_environment(
         environment["scope"] = "GLOBAL" if str(scope).lower() == "global" else "LOCAL"
         report.changes.append("将 environment.scope 归一化为 schema 枚举值")
 
-    variables = environment.setdefault("variables", {})
+    variables = environment.get("variables")
+    if not isinstance(variables, dict):
+        variables = {}
+        environment["variables"] = variables
+        report.changes.append("将 environment.variables 归一化为对象")
+
     for key, value in environment_variables.items():
         existing = variables.get(key)
         if not existing or str(existing).startswith("{{"):
@@ -232,8 +315,19 @@ def _normalize_metadata(scenario: dict[str, Any], report: NormalizationReport) -
 
 def _normalize_requests(scenario: dict[str, Any], report: NormalizationReport) -> None:
     for request in _iter_requests(scenario):
+        _normalize_request_url(request, report)
         _normalize_extractions(request, report)
         _normalize_params(request, report)
+
+
+def _normalize_request_url(request: dict[str, Any], report: NormalizationReport) -> None:
+    path = request.get("path")
+    if "url" in request or not isinstance(path, str) or not path:
+        return
+
+    request["url"] = f"{{{{baseUrl}}}}{path}" if path.startswith("/") else path
+    request.pop("path", None)
+    report.changes.append(f"{request.get('name', '未命名请求')} 的 path 改为 url")
 
 
 def _normalize_extractions(
@@ -245,6 +339,25 @@ def _normalize_extractions(
             extraction["variable"] = extraction.pop("variable_name")
             report.changes.append(
                 f"{request.get('name', '未命名请求')} 的 variable_extractions 字段 variable_name 改为 variable"
+            )
+        if "name" in extraction and "variable" not in extraction:
+            extraction["variable"] = extraction.pop("name")
+            report.changes.append(
+                f"{request.get('name', '未命名请求')} 的 variable_extractions 字段 name 改为 variable"
+            )
+        source = extraction.get("source")
+        expression = extraction.get("expression")
+        if (
+            isinstance(expression, str)
+            and expression.startswith("$")
+            and "json_path" not in extraction
+            and "header_name" not in extraction
+            and source in {None, "body"}
+        ):
+            extraction["source"] = "body"
+            extraction["json_path"] = extraction.pop("expression")
+            report.changes.append(
+                f"{request.get('name', '未命名请求')} 的 variable_extractions 字段 expression 改为 json_path"
             )
 
 
@@ -259,6 +372,53 @@ def _normalize_params(request: dict[str, Any], report: NormalizationReport) -> N
             converted[str(item["key"])] = str(item.get("value", ""))
     request["params"] = converted
     report.changes.append(f"{request.get('name', '未命名请求')} 的 params 由数组转为对象")
+
+
+def _looks_like_candidate_scenario(candidate: dict[str, Any]) -> bool:
+    return (
+        isinstance(candidate, dict)
+        and candidate.get("schema_version") == "1.0.0"
+        and isinstance(candidate.get("project"), dict)
+        and isinstance(candidate.get("environment"), dict)
+        and isinstance(candidate.get("collections"), list)
+        and isinstance(candidate.get("suites"), list)
+    )
+
+
+def _can_normalize_candidate_scenario(candidate: dict[str, Any]) -> bool:
+    if _looks_like_candidate_scenario(candidate):
+        return True
+    if not isinstance(candidate, dict):
+        return False
+    if candidate.get("schema_version") != "1.0.0":
+        return False
+    project = candidate.get("project")
+    if not isinstance(project, dict):
+        return False
+
+    return any(
+        key in candidate or key in project
+        for key in ("environment", "collections", "requests", "suite", "suites")
+    )
+
+
+def _detect_empty_retrieval_error(content: str) -> str | None:
+    normalized = content.lower()
+    if any(marker in normalized for marker in _EMPTY_RETRIEVAL_MARKERS):
+        return _EMPTY_RETRIEVAL_ERROR
+    return None
+
+
+def _build_retry_question(question: str) -> str:
+    return (
+        "你上一条输出未通过解析。"
+        "请基于同样的检索内容重新回答，并且只返回一个合法 JSON 对象。"
+        "不要输出 Thinking Process、Reasoning、解释、Markdown 或代码块。"
+        "输出必须从 { 开始，以 } 结束。"
+        "必须包含 schema_version=\"1.0.0\"。"
+        "variable_extractions 必须使用 variable 字段，不要使用 name 或 variable_name。"
+        f"\n\n原始用户需求：{question}"
+    )
 
 
 def _normalize_suite_steps(scenario: dict[str, Any]) -> None:

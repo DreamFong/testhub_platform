@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -15,6 +16,115 @@ from apps.api_testing.services.ragflow_scenario_runner import (
 )
 
 User = get_user_model()
+_REDACTED = "[REDACTED]"
+_SENSITIVE_NAME_MARKERS = (
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "authorization",
+    "cookie",
+    "apikey",
+    "accesskey",
+    "privatekey",
+)
+_PLACEHOLDER_PATTERN = re.compile(r"(\{\{[^{}]+\}\}|\$\{[^{}]+\})")
+_SAFE_PLACEHOLDER_VALUE_PATTERN = re.compile(
+    r"^\s*(?:Bearer\s+|Basic\s+)?(?:\{\{[^{}]+\}\}|\$\{[^{}]+\})\s*$",
+    re.IGNORECASE,
+)
+_EMBEDDED_SECRET_PATTERNS = (
+    re.compile(r"(Bearer\s+)([^\s,;]+)", re.IGNORECASE),
+    re.compile(r"(Basic\s+)([^\s,;]+)", re.IGNORECASE),
+    re.compile(
+        r"((?:token|access[_-]?token|api[_-]?key|password|passwd|secret|authorization|cookie)\s*[:=]\s*)([^\s,;]+)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"([?&](?:token|access[_-]?token|api[_-]?key|password|passwd|secret)=)([^&\s]+)",
+        re.IGNORECASE,
+    ),
+)
+
+
+def _normalize_name(name: str) -> str:
+    return "".join(char for char in name.lower() if char.isalnum())
+
+
+def _is_sensitive_name(name: str) -> bool:
+    normalized = _normalize_name(name)
+    return any(marker in normalized for marker in _SENSITIVE_NAME_MARKERS)
+
+
+def _redact_embedded_sensitive_text(value: str) -> str:
+    def replace(match: re.Match[str]) -> str:
+        prefix, secret = match.group(1), match.group(2)
+        if _PLACEHOLDER_PATTERN.fullmatch(secret):
+            return f"{prefix}{secret}"
+        return f"{prefix}{_REDACTED}"
+
+    redacted = value
+    for pattern in _EMBEDDED_SECRET_PATTERNS:
+        redacted = pattern.sub(replace, redacted)
+    return redacted
+
+
+def _redact_non_placeholder_segment(segment: str) -> str:
+    if not segment.strip():
+        return segment
+
+    bearer_match = re.fullmatch(r"(\s*(?:Bearer|Basic)\s+)(.+?)(\s*)", segment, flags=re.IGNORECASE)
+    if bearer_match:
+        token = bearer_match.group(2).strip()
+        if _PLACEHOLDER_PATTERN.fullmatch(token):
+            return segment
+        return f"{bearer_match.group(1)}{_REDACTED}{bearer_match.group(3)}"
+
+    redacted = _redact_embedded_sensitive_text(segment)
+    if redacted != segment:
+        return redacted
+    return _REDACTED
+
+
+def _redact_value(value: Any) -> Any:
+    if not isinstance(value, str):
+        return _REDACTED
+    if _SAFE_PLACEHOLDER_VALUE_PATTERN.fullmatch(value):
+        return value
+    if _PLACEHOLDER_PATTERN.search(value):
+        parts = _PLACEHOLDER_PATTERN.split(value)
+        return "".join(
+            part if _PLACEHOLDER_PATTERN.fullmatch(part) else _redact_non_placeholder_segment(part)
+            for part in parts
+        )
+    return _REDACTED
+
+
+def _redact_sensitive_data(value: Any) -> Any:
+    if isinstance(value, str):
+        return _redact_embedded_sensitive_text(value)
+    if isinstance(value, list):
+        return [_redact_sensitive_data(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+
+    sensitive_pair_name = next(
+        (
+            value[field]
+            for field in ("key", "name")
+            if isinstance(value.get(field), str) and _is_sensitive_name(value[field])
+        ),
+        None,
+    )
+    redacted: dict[str, Any] = {}
+    for key, item in value.items():
+        if key == "value" and sensitive_pair_name:
+            redacted[key] = _redact_value(item)
+        elif _is_sensitive_name(key):
+            redacted[key] = _redact_value(item)
+        else:
+            redacted[key] = _redact_sensitive_data(item)
+    return redacted
 
 
 class Command(BaseCommand):
@@ -37,7 +147,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--question",
-            default="请生成一个最小可执行的接口自动化测试场景，只输出 TestHub JSON。",
+            default="请生成一个最小可执行的接口自动化测试场景，只输出 candidate scenario JSON；后续由 runner 负责归一化、校验、导入和执行。",
             help="传给 RAGFlow Agent 的用户问题",
         )
         parser.add_argument(
@@ -90,7 +200,7 @@ class Command(BaseCommand):
 
         if not result.success:
             self._write_failure(result)
-            raise CommandError(result.error or "RAGFlow 场景链路执行失败")
+            raise CommandError(_redact_sensitive_data(result.error or "RAGFlow 场景链路执行失败"))
 
         self._write_success(result)
 
@@ -143,7 +253,7 @@ class Command(BaseCommand):
         normalized_output = options.get("normalized_output")
         if normalized_output:
             Path(normalized_output).write_text(
-                json.dumps(result.normalized, ensure_ascii=False, indent=2),
+                json.dumps(_redact_sensitive_data(result.normalized), ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
 
@@ -161,7 +271,7 @@ class Command(BaseCommand):
                 "error": result.error,
             }
             Path(report_output).write_text(
-                json.dumps(report, ensure_ascii=False, indent=2),
+                json.dumps(_redact_sensitive_data(report), ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
 
@@ -169,30 +279,30 @@ class Command(BaseCommand):
         for error in result.schema_errors:
             self.stderr.write(self.style.ERROR(f"schema 错误 {error.path}: {error.message}"))
         if result.import_result:
-            self.stderr.write(
-                self.style.ERROR(
-                    f"导入结果: {self._summarize_import_result(result.import_result)}"
-                )
+            summarized_import = _redact_sensitive_data(
+                self._summarize_import_result(result.import_result)
             )
+            self.stderr.write(self.style.ERROR(f"导入结果: {summarized_import}"))
         if result.execution_result:
-            self.stderr.write(
-                self.style.ERROR(
-                    f"执行结果: {self._summarize_execution_result(result.execution_result)}"
-                )
+            summarized_execution = _redact_sensitive_data(
+                self._summarize_execution_result(result.execution_result)
             )
+            self.stderr.write(self.style.ERROR(f"执行结果: {summarized_execution}"))
 
     def _write_success(self, result: Any) -> None:
         self.stdout.write(self.style.SUCCESS("RAGFlow 场景链路执行成功"))
         if result.report.changes:
             self.stdout.write(f"归一化修正数: {len(result.report.changes)}")
         if result.import_result:
-            self.stdout.write(
-                f"导入结果: {self._summarize_import_result(result.import_result)}"
+            summarized_import = _redact_sensitive_data(
+                self._summarize_import_result(result.import_result)
             )
+            self.stdout.write(f"导入结果: {summarized_import}")
         if result.execution_result:
-            self.stdout.write(
-                f"执行结果: {self._summarize_execution_result(result.execution_result)}"
+            summarized_execution = _redact_sensitive_data(
+                self._summarize_execution_result(result.execution_result)
             )
+            self.stdout.write(f"执行结果: {summarized_execution}")
 
     def _summarize_import_result(self, result: dict[str, Any] | None) -> dict[str, Any] | None:
         if not result:

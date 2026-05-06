@@ -7,7 +7,6 @@ alwaysApply: true
 - 使用中文。
 - 使用格式：`<type>: <简短描述>`。
 - `type` 只能使用：`feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`style`、`perf`。
-- 标题不超过 100 个字符。
 - 不要添加句号、署名、解释说明或 Markdown。
 - 示例：
   - `feat: 新增测试用例批量导入功能`

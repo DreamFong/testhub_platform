@@ -1,27 +1,40 @@
 """
 将 OpenAPI JSON 转换为 RAGFlow 友好的 Markdown 文档。
-每个 API 接口生成一个扁平段落（单层标题），避免被 RAGFlow book 分块切碎。
+每个 API 接口输出为两行扁平段落，避免被 RAGFlow book 分块切碎。
 
 用法:
-    python openapi2md.py <input.json> [-o output.md] [--by-tag]
+    python openapi2md.py <input.json> [-o output.txt] [--by-tag]
 """
+
 import argparse
 import json
+import re
 import sys
 from typing import Any
 
 
-def resolve_ref(spec: dict, ref: str) -> dict:
+def normalize_inline_text(value: Any) -> str:
+    text = " ".join(str(value).split())
+    text = text.replace("|", "｜")
+    text = text.replace("#", "＃")
+    text = text.replace("---", "—")
+    text = re.sub(r"^\s*＃{1,6}\s*", "", text)
+    return text.strip()
+
+
+def resolve_ref(spec: dict[str, Any], ref: str) -> dict[str, Any]:
     if not ref.startswith("#/"):
         return {"type": "string", "description": f"(unresolved ref: {ref})"}
     parts = ref.lstrip("#/").split("/")
     node: Any = spec
-    for p in parts:
-        node = node.get(p, {})
+    for part in parts:
+        node = node.get(part, {})
     return node if isinstance(node, dict) else {}
 
 
-def format_schema_inline(spec: dict, root: dict, depth: int = 0, max_depth: int = 2) -> str:
+def format_schema_inline(
+    spec: dict[str, Any], root: dict[str, Any], depth: int = 0, max_depth: int = 2
+) -> str:
     """将 JSON Schema 转为单行内联格式，避免产生换行导致分块碎片化。"""
     if depth > max_depth:
         return "..."
@@ -29,8 +42,8 @@ def format_schema_inline(spec: dict, root: dict, depth: int = 0, max_depth: int 
         spec = resolve_ref(root, spec["$ref"])
 
     schema_type = spec.get("type", "object")
-    desc = spec.get("description", "")
-    example = spec.get("example", "")
+    desc = normalize_inline_text(spec.get("description", ""))
+    example = normalize_inline_text(spec.get("example", ""))
 
     if schema_type == "array":
         items = spec.get("items", {})
@@ -55,16 +68,16 @@ def format_schema_inline(spec: dict, root: dict, depth: int = 0, max_depth: int 
             if "$ref" in prop:
                 prop.update(resolve_ref(root, prop.pop("$ref")))
             p_type = prop.get("type", "string")
-            p_desc = prop.get("description", "")
-            p_example = prop.get("example", "")
+            p_desc = normalize_inline_text(prop.get("description", ""))
+            p_example = normalize_inline_text(prop.get("example", ""))
             req = "必填" if name in required_fields else "可选"
-            s = f"{name}({p_type}, {req}"
+            item = f"{name}({p_type}, {req}"
             if p_desc:
-                s += f", {p_desc}"
+                item += f", {p_desc}"
             if p_example:
-                s += f", 示例:{p_example}"
-            s += ")"
-            parts.append(s)
+                item += f", 示例:{p_example}"
+            item += ")"
+            parts.append(item)
         return "; ".join(parts)
 
     result = schema_type
@@ -81,128 +94,97 @@ def format_schema_inline(spec: dict, root: dict, depth: int = 0, max_depth: int 
     return result
 
 
-def format_params_inline(params: list[dict]) -> str:
+def format_params_inline(params: list[dict[str, Any]]) -> str:
     if not params:
         return ""
     parts = []
-    for p in params:
-        name = p.get("name", "")
-        location = p.get("in", "")
-        p_type = p.get("schema", {}).get("type", "string")
-        required = "必填" if p.get("required") else "可选"
-        desc = p.get("description", "")
-        example = p.get("example", "")
-        s = f"{name}({location}, {p_type}, {required}"
+    for param in params:
+        name = normalize_inline_text(param.get("name", ""))
+        location = normalize_inline_text(param.get("in", ""))
+        p_type = normalize_inline_text(param.get("schema", {}).get("type", "string"))
+        required = "必填" if param.get("required") else "可选"
+        desc = normalize_inline_text(param.get("description", ""))
+        example = normalize_inline_text(param.get("example", ""))
+        item = f"{name}({location}, {p_type}, {required}"
         if desc:
-            s += f", {desc}"
+            item += f", {desc}"
         if example:
-            s += f", 示例:{example}"
-        s += ")"
-        parts.append(s)
+            item += f", 示例:{example}"
+        item += ")"
+        parts.append(item)
     return "; ".join(parts)
 
 
-def convert_endpoint(path: str, method: str, spec: dict, root: dict) -> str:
-    """将单个 API 端点转为一个扁平的 Markdown 段落，全部内容在一个 ## 标题下。"""
-    lines = []
-    tag = spec.get("tags", ["未分类"])[0]
-    summary = spec.get("summary", "")
-    description = spec.get("description", "")
-    operation_id = spec.get("operationId", "")
+def convert_endpoint(path: str, method: str, spec: dict[str, Any], root: dict[str, Any]) -> str:
+    """将单个 API 端点转为一个两行 Markdown 段落。"""
+    tag = normalize_inline_text(spec.get("tags", ["未分类"])[0])
+    summary = normalize_inline_text(spec.get("summary", ""))
+    description = normalize_inline_text(spec.get("description", ""))
+    operation_id = normalize_inline_text(spec.get("operationId", ""))
 
-    # 唯一标题：方法 + 路径 + 摘要
-    title = f"{method.upper()} {path}"
+    title = f"## {method.upper()} {path}"
     if summary:
         title += f" - {summary}"
-    lines.append(f"## {title}")
-    lines.append("")
 
-    # 元信息行
-    meta = [f"模块: {tag}", f"operationId: {operation_id}"]
-    lines.append(" | ".join(meta))
-    lines.append("")
+    body_parts = [f"模块: {tag}", f"operationId: {operation_id}"]
 
     if description:
-        lines.append(description)
-        lines.append("")
+        body_parts.append(description)
 
-    # 请求参数（query/path/header）
     params = spec.get("parameters", [])
     if params:
-        lines.append(f"请求参数: {format_params_inline(params)}")
-        lines.append("")
+        body_parts.append(f"请求参数: {format_params_inline(params)}")
 
-    # 请求体
     request_body = spec.get("requestBody", {})
     if request_body:
         content = request_body.get("content", {})
-        for ct, ct_spec in content.items():
-            schema = ct_spec.get("schema", {})
-            required = "必填" if request_body.get("required") else "可选"
-            schema_str = format_schema_inline(schema, root)
-            lines.append(f"请求体({ct}, {required}): {schema_str}")
-            lines.append("")
+        body_parts.extend(
+            [
+                f"请求体({normalize_inline_text(content_type)}, {'必填' if request_body.get('required') else '可选'}): {format_schema_inline(content_spec.get('schema', {}), root)}"
+                for content_type, content_spec in content.items()
+            ]
+        )
 
-    # 响应
     responses = spec.get("responses", {})
     if responses:
         resp_parts = []
         for code, resp_spec in responses.items():
-            resp_desc = resp_spec.get("description", "")
+            resp_desc = normalize_inline_text(resp_spec.get("description", ""))
             resp_content = resp_spec.get("content", {})
-            for ct, ct_spec in resp_content.items():
-                schema = ct_spec.get("schema", {})
+            for content_type, content_spec in resp_content.items():
+                schema = content_spec.get("schema", {})
                 schema_str = format_schema_inline(schema, root)
-                resp_parts.append(f"{code} {resp_desc}: {schema_str}")
+                if resp_desc:
+                    resp_parts.append(f"{code} {resp_desc}: {schema_str}")
+                else:
+                    resp_parts.append(f"{code}: {schema_str}")
         if resp_parts:
-            lines.append("响应: " + " | ".join(resp_parts))
-            lines.append("")
+            body_parts.append("响应: " + " | ".join(resp_parts))
 
-    lines.append("---")
-    lines.append("")
-    return "\n".join(lines)
+    return "\n".join([title, " | ".join(part for part in body_parts if part)])
 
 
 def convert(input_path: str, output_path: str | None = None, by_tag: bool = False) -> str:
     with open(input_path, encoding="utf-8") as f:
         spec = json.load(f)
 
-    info = spec.get("info", {})
     paths = spec.get("paths", {})
 
-    all_sections: list[tuple[str, str]] = []
+    all_sections: list[tuple[str, str, str, str, str]] = []
 
     for path, methods in paths.items():
         for method, endpoint_spec in methods.items():
             if method not in ("get", "post", "put", "delete", "patch"):
                 continue
-            tag = endpoint_spec.get("tags", ["未分类"])[0]
+            tag = normalize_inline_text(endpoint_spec.get("tags", ["未分类"])[0])
+            summary = normalize_inline_text(endpoint_spec.get("summary", ""))
             md = convert_endpoint(path, method, endpoint_spec, spec)
-            all_sections.append((tag, md))
+            all_sections.append((tag, path, method, summary, md))
 
     if by_tag:
-        from collections import OrderedDict
-        grouped: dict[str, list[str]] = OrderedDict()
-        for tag, md in all_sections:
-            grouped.setdefault(tag, []).append(md)
+        all_sections.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
 
-        parts = [
-            f"# {info.get('title', 'API Documentation')}",
-            f"版本: {info.get('version', '')} | 描述: {info.get('description', '')} | 接口总数: {len(all_sections)}",
-            "",
-        ]
-        for tag, mds in grouped.items():
-            parts.append(f"# {tag}")
-            parts.append("")
-            parts.extend(mds)
-        output = "\n".join(parts)
-    else:
-        header = [
-            f"# {info.get('title', 'API Documentation')}",
-            f"版本: {info.get('version', '')} | 描述: {info.get('description', '')} | 接口总数: {len(all_sections)}",
-            "",
-        ]
-        output = "\n".join(header + [md for _, md in all_sections])
+    output = "\n".join(md for _, _, _, _, md in all_sections)
 
     if output_path:
         with open(output_path, "w", encoding="utf-8") as f:
@@ -210,11 +192,11 @@ def convert(input_path: str, output_path: str | None = None, by_tag: bool = Fals
     return output
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="将 OpenAPI JSON 转为 RAGFlow 友好的 Markdown（扁平格式）")
     parser.add_argument("input", help="OpenAPI JSON 文件路径")
     parser.add_argument("-o", "--output", help="输出文件路径")
-    parser.add_argument("--by-tag", action="store_true", help="按模块标签分组")
+    parser.add_argument("--by-tag", action="store_true", help="按模块标签排序输出")
     args = parser.parse_args()
     result = convert(args.input, args.output, args.by_tag)
     if not args.output:

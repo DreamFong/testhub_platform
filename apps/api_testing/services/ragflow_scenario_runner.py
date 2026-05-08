@@ -317,6 +317,7 @@ def _normalize_requests(scenario: dict[str, Any], report: NormalizationReport) -
     for request in _iter_requests(scenario):
         _normalize_request_url(request, report)
         _normalize_extractions(request, report)
+        _normalize_assertions(request, report)
         _normalize_params(request, report)
 
 
@@ -358,6 +359,69 @@ def _normalize_extractions(
             extraction["json_path"] = extraction.pop("expression")
             report.changes.append(
                 f"{request.get('name', '未命名请求')} 的 variable_extractions 字段 expression 改为 json_path"
+            )
+
+
+
+def _normalize_assertions(request: dict[str, Any], report: NormalizationReport) -> None:
+    for assertion in request.get("assertions", []) or []:
+        # json_path_exists -> json_path with expected=true
+        if assertion.get("type") == "json_path_exists":
+            assertion["type"] = "json_path"
+            # expected may contain the json_path expression instead of a bool
+            expr = assertion.pop("expression", assertion.pop("path", ""))
+            if not expr and isinstance(assertion.get("expected"), str) and assertion["expected"].startswith("$"):
+                expr = assertion.pop("expected")
+            if expr:
+                assertion["json_path"] = expr
+            assertion["expected"] = True
+            assertion.pop("value", None)
+            report.changes.append(
+                f"{request.get('name', '未命名请求')} assertion json_path_exists→json_path"
+            )
+            continue
+
+        # expression -> json_path rename
+        if assertion.get("type") == "json_path" and "expression" in assertion and "json_path" not in assertion:
+            assertion["json_path"] = assertion.pop("expression")
+
+        # json_path type: expected contains json_path expr, value contains actual expected
+        # e.g. {'type': 'json_path', 'expected': '$.code', 'value': 0}
+        #  ->  {'type': 'json_path', 'json_path': '$.code', 'expected': 0}
+        if (
+            assertion.get("type") == "json_path"
+            and "json_path" not in assertion
+            and isinstance(assertion.get("expected"), str)
+            and assertion["expected"].startswith("$")
+            and "value" in assertion
+        ):
+            assertion["json_path"] = assertion.pop("expected")
+            assertion["expected"] = assertion.pop("value")
+            report.changes.append(
+                f"{request.get('name', '未命名请求')} assertion expected/value 互换 (json_path expr→json_path field)"
+            )
+            continue
+
+        # value -> expected rename (when expected already correct or absent)
+        if "value" in assertion and "json_path" in assertion and "expected" not in assertion:
+            assertion["expected"] = assertion.pop("value")
+            report.changes.append(
+                f"{request.get('name', '未命名请求')} assertion value→expected"
+            )
+
+        # json_path missing expected but has json_path set and expected was already the expr
+        # e.g. {'type': 'json_path', 'expected': True} from json_path_exists that lost its path
+        if (
+            assertion.get("type") == "json_path"
+            and "json_path" not in assertion
+            and not isinstance(assertion.get("expected"), str)
+        ):
+            # No json_path expression at all - remove this assertion as it's invalid
+            assertion.clear()
+            assertion["type"] = "status_code"
+            assertion["expected"] = 200
+            report.changes.append(
+                f"{request.get('name', '未命名请求')} assertion 缺少 json_path 表达式, 降级为 status_code 200"
             )
 
 

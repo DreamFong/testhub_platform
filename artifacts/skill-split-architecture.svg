@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1700" viewBox="0 0 1700 1700">
+  <defs>
+    <style>
+      .title { font: 700 34px "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif; fill: #111827; }
+      .subtitle { font: 600 22px "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif; fill: #1f2937; }
+      .label { font: 500 18px "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif; fill: #111827; }
+      .small { font: 400 14px "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif; fill: #374151; }
+      .tiny { font: 400 12px "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif; fill: #4b5563; }
+      .box { fill: #ffffff; stroke: #94a3b8; stroke-width: 2; rx: 16; ry: 16; filter: url(#shadow); }
+      .source { fill: #eff6ff; stroke: #2563eb; }
+      .skillA { fill: #f0fdf4; stroke: #16a34a; }
+      .skillB { fill: #f5f3ff; stroke: #7c3aed; }
+      .skillC { fill: #fff7ed; stroke: #f97316; }
+      .output { fill: #ecfdf5; stroke: #059669; }
+      .note { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 12; ry: 12; }
+      .decision { fill: #fef2f2; stroke: #dc2626; stroke-width: 2; }
+      .arrow { stroke: #475569; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 8 6; }
+      .sectionLine { stroke: #cbd5e1; stroke-width: 2; }
+    </style>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1700" height="1700" fill="#f8fafc"/>
+
+  <text x="850" y="60" text-anchor="middle" class="title">Skill 拆分图：源码逆向 SRS 与 TestHub 自动化闭环</text>
+  <text x="850" y="96" text-anchor="middle" class="small">目标：把一次性 RuoYi 流程拆成可复用、可组合、可推广的技能层</text>
+
+  <text x="80" y="150" class="subtitle">一、输入层</text>
+  <line x1="80" y1="166" x2="1620" y2="166" class="sectionLine"/>
+
+  <rect x="100" y="210" width="250" height="80" class="box source"/>
+  <text x="225" y="242" text-anchor="middle" class="label">项目源码</text>
+  <text x="225" y="266" text-anchor="middle" class="small">Controller / Service / VO / SQL / 前端</text>
+
+  <rect x="410" y="210" width="250" height="80" class="box source"/>
+  <text x="535" y="242" text-anchor="middle" class="label">API 文档</text>
+  <text x="535" y="266" text-anchor="middle" class="small">OpenAPI / Swagger / Apifox / Postman</text>
+
+  <rect x="720" y="210" width="250" height="80" class="box source"/>
+  <text x="845" y="242" text-anchor="middle" class="label">执行经验</text>
+  <text x="845" y="266" text-anchor="middle" class="small">变量提取、最小字段、错误规避</text>
+
+  <rect x="1030" y="210" width="250" height="80" class="box source"/>
+  <text x="1155" y="242" text-anchor="middle" class="label">目标系统环境</text>
+  <text x="1155" y="266" text-anchor="middle" class="small">鉴权、租户、测试账号、前置条件</text>
+
+  <rect x="1340" y="210" width="250" height="80" class="box source"/>
+  <text x="1465" y="242" text-anchor="middle" class="label">TestHub / RAGFlow</text>
+  <text x="1465" y="266" text-anchor="middle" class="small">知识库、Agent、导入、执行环境</text>
+
+  <text x="80" y="370" class="subtitle">二、Skill 拆分层</text>
+  <line x1="80" y1="386" x2="1620" y2="386" class="sectionLine"/>
+
+  <!-- Skill A -->
+  <rect x="90" y="430" width="470" height="440" class="box skillA"/>
+  <text x="325" y="468" text-anchor="middle" class="label">Skill A：源码逆向生成 SRS</text>
+  <text x="325" y="492" text-anchor="middle" class="small">作用：从源码抽取需求语义，生成可检索 SRS</text>
+
+  <text x="120" y="540" class="small">输入：</text>
+  <text x="145" y="566" class="tiny">- 项目源码路径</text>
+  <text x="145" y="588" class="tiny">- 模块名 / 功能范围</text>
+  <text x="145" y="610" class="tiny">- 可选：已有 SRS 作为验收基准</text>
+
+  <text x="120" y="650" class="small">内部步骤：</text>
+  <text x="145" y="676" class="tiny">1. 定位 Controller / Service / VO / SQL / 前端</text>
+  <text x="145" y="698" class="tiny">2. 提取功能、字段、规则、异常、权限、验收标准</text>
+  <text x="145" y="720" class="tiny">3. 生成 PRD / SRS 文本初稿</text>
+  <text x="145" y="742" class="tiny">4. 做 RAGFlow 友好化改写</text>
+
+  <text x="120" y="778" class="small">输出：</text>
+  <text x="145" y="804" class="tiny">- SRS Markdown</text>
+  <text x="145" y="826" class="tiny">- SRS PDF</text>
+  <text x="145" y="848" class="tiny">- 基准对比结果</text>
+
+  <!-- Skill B -->
+  <rect x="615" y="430" width="470" height="440" class="box skillB"/>
+  <text x="850" y="468" text-anchor="middle" class="label">Skill B：知识库构建与分块验证</text>
+  <text x="850" y="492" text-anchor="middle" class="small">作用：把 SRS / API 文档转成可用 RAGFlow 知识库</text>
+
+  <text x="645" y="540" class="small">输入：</text>
+  <text x="670" y="566" class="tiny">- SRS PDF / DOCX / TXT</text>
+  <text x="670" y="588" class="tiny">- API 文档（OpenAPI / Swagger / TXT）</text>
+  <text x="670" y="610" class="tiny">- RAGFlow 连接信息</text>
+
+  <text x="645" y="650" class="small">内部步骤：</text>
+  <text x="670" y="676" class="tiny">1. 创建 / 复用知识库</text>
+  <text x="670" y="698" class="tiny">2. 上传文档并触发解析</text>
+  <text x="670" y="720" class="tiny">3. 检查 chunk 数、短 chunk 比例</text>
+  <text x="670" y="742" class="tiny">4. 做检索 sanity check 与 retrieval gate</text>
+
+  <text x="645" y="778" class="small">输出：</text>
+  <text x="670" y="804" class="tiny">- SRS_KB_ID / API_DOCS_KB_ID</text>
+  <text x="670" y="826" class="tiny">- retrieval params</text>
+  <text x="670" y="848" class="tiny">- chunk 质量报告</text>
+
+  <!-- Skill C -->
+  <rect x="1140" y="430" width="470" height="440" class="box skillC"/>
+  <text x="1375" y="468" text-anchor="middle" class="label">Skill C：执行约束增强层</text>
+  <text x="1375" y="492" text-anchor="middle" class="small">作用：沉淀 token、变量提取、最小字段等闭环经验</text>
+
+  <text x="1170" y="540" class="small">输入：</text>
+  <text x="1195" y="566" class="tiny">- 真实跑通案例</text>
+  <text x="1195" y="588" class="tiny">- RAGFlow 生成结果 / TestHub 执行结果</text>
+  <text x="1195" y="610" class="tiny">- 失败归因与修正规则</text>
+
+  <text x="1170" y="650" class="small">内部步骤：</text>
+  <text x="1195" y="676" class="tiny">1. 抽取最小业务闭环</text>
+  <text x="1195" y="698" class="tiny">2. 固化变量提取路径</text>
+  <text x="1195" y="720" class="tiny">3. 固化最小 body / headers / assertions</text>
+  <text x="1195" y="742" class="tiny">4. 记录错误字段与禁止写法</text>
+
+  <text x="1170" y="778" class="small">输出：</text>
+  <text x="1195" y="804" class="tiny">- 执行约束知识库 / 规则文档</text>
+  <text x="1195" y="826" class="tiny">- 最小闭环模板</text>
+  <text x="1195" y="848" class="tiny">- 失败规避规则</text>
+
+  <text x="80" y="950" class="subtitle">三、组合层</text>
+  <line x1="80" y1="966" x2="1620" y2="966" class="sectionLine"/>
+
+  <rect x="250" y="1020" width="300" height="90" class="box output"/>
+  <text x="400" y="1055" text-anchor="middle" class="label">组合 1：纯 SRS 生成</text>
+  <text x="400" y="1080" text-anchor="middle" class="small">Skill A 单独运行</text>
+  <text x="400" y="1102" text-anchor="middle" class="tiny">适合文档逆向、需求补全、知识库准备</text>
+
+  <rect x="700" y="1020" width="300" height="90" class="box output"/>
+  <text x="850" y="1055" text-anchor="middle" class="label">组合 2：知识库构建</text>
+  <text x="850" y="1080" text-anchor="middle" class="small">Skill A + Skill B</text>
+  <text x="850" y="1102" text-anchor="middle" class="tiny">适合产出可检索 SRS / API 知识库</text>
+
+  <rect x="1150" y="1020" width="300" height="90" class="box output"/>
+  <text x="1300" y="1055" text-anchor="middle" class="label">组合 3：自动化闭环</text>
+  <text x="1300" y="1080" text-anchor="middle" class="small">Skill A + Skill B + Skill C</text>
+  <text x="1300" y="1102" text-anchor="middle" class="tiny">适合 RAGFlow → TestHub 场景生成与执行</text>
+
+  <path d="M325 870 L400 1020" class="arrow"/>
+  <path d="M850 870 L850 1020" class="arrow"/>
+  <path d="M1375 870 L1300 1020" class="arrow"/>
+  <path d="M325 870 C325 940 700 940 850 1020" class="arrow dashed"/>
+  <path d="M850 870 C850 940 1150 940 1300 1020" class="arrow dashed"/>
+
+  <text x="80" y="1190" class="subtitle">四、职责边界</text>
+  <line x1="80" y1="1206" x2="1620" y2="1206" class="sectionLine"/>
+
+  <rect x="120" y="1250" width="1460" height="220" class="note"/>
+  <text x="150" y="1290" class="label">推荐拆分原则</text>
+  <text x="150" y="1330" class="small">1. Skill A 不负责 TestHub 执行经验，只负责“源码 → SRS → PDF”。</text>
+  <text x="150" y="1362" class="small">2. Skill B 不负责理解业务，只负责“文档 → 知识库 → 分块验证 → retrieval gate”。</text>
+  <text x="150" y="1394" class="small">3. Skill C 不负责生成需求文档，只负责“最小闭环执行约束”与“失败规避规则”。</text>
+  <text x="150" y="1426" class="small">4. 推广到其他项目时，先跑 Skill A + Skill B，只有在真实执行闭环时再引入 Skill C。</text>
+
+  <text x="80" y="1530" class="subtitle">五、最终目标</text>
+  <line x1="80" y1="1546" x2="1620" y2="1546" class="sectionLine"/>
+
+  <rect x="390" y="1590" width="920" height="110" class="box output"/>
+  <text x="850" y="1630" text-anchor="middle" class="label">可推广的多 Skill 体系</text>
+  <text x="850" y="1660" text-anchor="middle" class="small">源码逆向 SRS skill ＋ RAGFlow 知识库构建 skill ＋ 执行约束增强 skill</text>
+  <text x="850" y="1684" text-anchor="middle" class="tiny">既能复现 RuoYi，又能迁移到其他项目，避免把一次性经验写死在一个 Skill 中</text>
+</svg>

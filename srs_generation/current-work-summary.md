@@ -321,3 +321,64 @@ Skill C 建议在 Skill B 通过后启动，避免把执行约束混入纯 SRS �
 ## 10. 当前一句话总结
 
 当前已完成：**Skill A 从规范、模板、prompt、PDF 脚本到两个样本验证和 handoff 包的完整落地，已修复 PDF 标题重复、英文异常拆字和标题层级弱化问题；两个样本均通过 PDF 文本层 gate、PDF 可读性 gate 和 Skill A gate；并已包装为可移植 Claude skill `source-to-srs`，按要求停在 Skill B/C 之前。**
+
+## 11. 2026-06-04 当日补充（新设备恢复用）
+
+### 11.1 已推到远程的最新状态
+
+- 当前分支：`srs-generation-skill-a-prep`
+- 远程分支：`origin/srs-generation-skill-a-prep`
+- 最新提交：`5736093`
+- commit message：`docs: 完善 Skill A PDF 可读性 gate`
+
+### 11.2 本次提交覆盖内容
+
+- 已完成 Skill A PDF 生成、文本层检查与可读性 gate 升级。
+- `generate_srs_pdf.py` 已修复标题重复、英文异常拆字、标题层级弱化，并补强字体候选策略和内置 writer 的英文 token 处理。
+- `check_pdf_text_layer.py` 已升级为同时输出 `pdf_text_layer_gate` 与 `pdf_readability_gate`，并修复标题识别、标题重复检测和英文异常拆字误报问题。
+- 用户管理、角色管理两个样本的 PDF、检查报告、gate-result、handoff 包与总结报告均已完成回归更新。
+- 当前仍停在 Skill B / Skill C 之前，未执行任何外部系统操作。
+
+### 11.3 当前未提交 / 未处理项
+
+- 工作区仍有未跟踪文件 `ragflow-testhub-autotest-roadmap.md`，未纳入上述 commit，也未推送到远程。
+- `source-to-srs` 关于“非研发可读性不足、正文混入过多实现细节”的修复清单已讨论完成，但尚未正式落盘实施。
+
+### 11.4 新设备恢复最短路径
+
+在新设备上建议先执行：
+
+```bash
+git fetch origin
+git checkout srs-generation-skill-a-prep
+git pull
+```
+
+然后按顺序优先读取：
+
+1. `srs_generation/current-work-summary.md`
+2. `srs_generation/handoff/skill-a-before-skill-bc-20260604/handoff-summary.md`
+3. `srs_generation/reports/skill-a-before-skill-bc-final-report.md`
+4. `srs_generation/tasks/36-skill-a-pdf-readability-fix.md`
+5. `srs_generation/specs/skill-a-pdf-generation-and-text-check.md`
+
+如果下一步继续的是“Skill 本身修复”，而不是进入 Skill B，则额外读取：
+
+- `srs_generation/prompts/skill-a/srs-kb-friendly-rewrite.md`
+- `srs_generation/prompts/skill-a/independent-review.md`
+- `srs_generation/specs/skill-a-review-and-gate.md`
+- `docs/ruoyi-user-management-srs-v2.pdf`
+
+其中 `docs/ruoyi-user-management-srs-v2.pdf` 只参考格式和描述方式，不要求参照其具体内容。
+
+### 11.5 当前下一步建议
+
+当前下一步更像是修 Skill A 的“产物把控”，而不是继续修 PDF 脚本。
+
+建议优先处理：
+
+1. 强化 `srs-kb-friendly` 改写约束，明确主文档默认面向业务、产品、测试和知识库使用者。
+2. 明确 `@PreAuthorize`、接口路径、类名、方法名、权限码等实现细节默认不进入正文，而下沉到 `source-evidence-map` 或追溯说明。
+3. 在独立评审与 gate 中新增“非研发可读性”检查，避免正文虽然事实正确，但仍像技术实现说明。
+
+这一轮修复尚未开始实施；如继续推进，建议先做 prompt / review / gate 三处约束收紧，再决定是否需要补充产物结构调整。

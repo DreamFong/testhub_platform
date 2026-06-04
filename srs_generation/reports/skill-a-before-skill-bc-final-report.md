@@ -6,7 +6,7 @@
 
 - Skill A prompt 文件结构落地
 - Skill A 核心 prompts 编写
-- PDF 生成与文本层检查脚本实现
+- PDF 生成、文本层检查与可读性 gate 脚本实现
 - 用户管理样本回归验证
 - 角色管理第二样本验证
 - Skill A handoff 包打包
@@ -32,13 +32,14 @@ srs_generation/prompts/skill-a/
 - [generate_srs_pdf.py](../scripts/generate_srs_pdf.py)
 - [check_pdf_text_layer.py](../scripts/check_pdf_text_layer.py)
 
-脚本已通过最小中文样例、用户管理样本和角色管理样本验证。当前环境缺少 reportlab/pypdf 时，脚本使用内置 PDF 写入和内置文本提取降级路径，仍能生成可提取文本层的 PDF。
+脚本已通过最小中文样例、用户管理样本和角色管理样本验证。PDF 生成脚本已升级为默认使用 ReportLab 与适合中英文混排的 CJK 字体，修复标题重复、英文异常拆字和标题层级弱化问题；内置 PDF writer 仅作为兜底路径，并已避免硬切英文 token。PDF 检查脚本已升级为同时输出文本层 gate 与可读性 gate，并修正标题识别、标题重复检测和英文异常拆字误报问题。
 
 ### 用户管理样本
 
 ```text
 gate: pass
-pdf_text_check: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
 run_dir: srs_generation/runs/ruoyi-vue-pro-user-management-20260604/skill-a
 ```
 
@@ -50,7 +51,8 @@ run_dir: srs_generation/runs/ruoyi-vue-pro-user-management-20260604/skill-a
 
 ```text
 gate: pass
-pdf_text_check: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
 run_dir: srs_generation/runs/ruoyi-vue-pro-role-management-20260604/skill-a
 ```
 
@@ -75,7 +77,8 @@ srs_generation/handoff/skill-a-before-skill-bc-20260604/
 进入 Skill B 前置条件均已满足：
 
 - [x] 两个样本 gate 均为 pass
-- [x] 两个样本 PDF 文本层检查均为 pass
+- [x] 两个样本 PDF 文本层 gate 均为 pass
+- [x] 两个样本 PDF 可读性 gate 均为 pass
 - [x] 两个样本均有 source_evidence_map
 - [x] 两个样本均有 independent_review_report
 - [x] Skill A prompt、template、spec、script 均已落地

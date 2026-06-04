@@ -13,6 +13,7 @@
 - [06-orchestration-skill-tasks.md](06-orchestration-skill-tasks.md)：总编排 Skill 任务
 - [07-artifact-structure-tasks.md](07-artifact-structure-tasks.md)：产物目录与文件命名任务
 - [08-open-decisions.md](08-open-decisions.md)：待确认决策清单
+- [36-skill-a-pdf-readability-fix.md](36-skill-a-pdf-readability-fix.md)：Skill A PDF 可读性修复任务
 
 ## 建议执行顺序
 

@@ -12,8 +12,10 @@ allowed_next_stage: Skill B
 
 - scope confirm 已完成，状态为 `confirmed`。
 - SRS Markdown 已生成：[srs-kb-friendly.md](srs-kb-friendly.md)。
-- SRS PDF 已生成：[srs-kb-friendly.pdf](srs-kb-friendly.pdf)。
-- PDF 文本层检查结果为 pass：[pdf-text-check-report.md](pdf-text-check-report.md)。
+- SRS PDF 已重新生成：[srs-kb-friendly.pdf](srs-kb-friendly.pdf)。
+- PDF 文本层 gate 为 pass：[pdf-text-check-report.md](pdf-text-check-report.md)。
+- PDF 可读性 gate 为 pass：[pdf-text-check-report.md](pdf-text-check-report.md)。
+- PDF 已修复标题重复、英文异常拆字和标题层级弱化问题。
 - source_evidence_map 覆盖主要功能、字段、业务规则、权限和异常。
 - 独立评审结果为 pass。
 

@@ -17,7 +17,8 @@ run_dir: srs_generation/runs/ruoyi-vue-pro-user-management-20260604/skill-a
 - source_evidence_map：已生成
 - kb-friendly SRS：已生成
 - PDF：已生成
-- PDF 文本层检查：pass
+- PDF 文本层 gate：pass
+- PDF 可读性 gate：pass
 - 自评：pass
 - 独立评审：pass
 - gate：pass
@@ -39,4 +40,4 @@ run_dir: srs_generation/runs/ruoyi-vue-pro-user-management-20260604/skill-a
 
 ## 4. 结论
 
-用户管理样本能够按 Skill A 新流程完成从 scope 推断到 gate 判定的完整回归，未发现倒退。该样本可作为后续 Skill A handoff 的第一个通过样本。
+用户管理样本能够按 Skill A 新流程完成从 scope 推断到 gate 判定的完整回归，未发现倒退。PDF 已修复标题重复、英文异常拆字和标题层级弱化问题，文本层 gate 与可读性 gate 均为 pass。该样本可作为后续 Skill A handoff 的第一个通过样本。

@@ -8,7 +8,7 @@ gate: pass
 stop_point: before Skill B / Skill C
 ```
 
-Skill A 已完成可执行化、PDF 生成与文本层检查、用户管理回归验证、角色管理第二样本验证，并形成进入 Skill B/C 前的 handoff 包。
+Skill A 已完成可执行化、PDF 生成、PDF 文本层与可读性检查、用户管理回归验证、角色管理第二样本验证，并形成进入 Skill B/C 前的 handoff 包。
 
 ## 2. 已冻结的 Skill A 能力
 
@@ -52,7 +52,8 @@ Skill A 已完成可执行化、PDF 生成与文本层检查、用户管理回�
 project: ruoyi-vue-pro
 target_module: system user management
 gate: pass
-pdf_text_check: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
 ```
 
 Handoff 文件：
@@ -70,7 +71,8 @@ Handoff 文件：
 project: ruoyi-vue-pro
 target_module: system role management
 gate: pass
-pdf_text_check: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
 ```
 
 Handoff 文件：
@@ -88,6 +90,7 @@ Handoff 文件：
 - [x] 至少两个样本验证通过
 - [x] kb-friendly SRS 已生成
 - [x] PDF 文本层可提取
+- [x] PDF 可读性 gate 通过
 - [x] source_evidence_map 完整
 - [x] independent_review_report 通过
 - [x] gate-result = pass

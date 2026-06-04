@@ -26,7 +26,7 @@ Skill C：执行约束增强
 Skill A spec
 → Skill A templates
 → Skill A prompts
-→ PDF 生成与文本层检查脚本
+→ PDF 生成、文本层检查与可读性 gate 脚本
 → 用户管理样本回归
 → 角色管理第二样本验证
 → Skill A handoff 包
@@ -37,7 +37,7 @@ Skill A spec
 
 - Skill A 已经不只是讨论稿，已经形成可执行的规范、模板、prompt、脚本和两个验证样本。
 - 用户管理样本和角色管理样本均已通过 Skill A gate。
-- 两个样本 PDF 文本层检查均通过。
+- 两个样本 PDF 文本层 gate 和可读性 gate 均通过。
 - 当前尚未进入 Skill B / Skill C。
 - 当前没有创建 RAGFlow 知识库，没有上传文档，没有执行 retrieval gate，没有提炼执行约束。
 
@@ -77,6 +77,7 @@ Skill A spec
 - `source_evidence_map` 是强制产物。
 - Skill A 只评估 SRS 文档质量，不评估 RAGFlow 检索效果。
 - PDF 文本层不可提取是硬性 fail。
+- PDF 可读性 gate fail 是硬性 fail；Skill A PDF 产物必须同时满足知识库友好和人类可读。
 - 关键结论无法提供源码依据是硬性 fail 或人工复核触发项。
 
 ### 3.3 Skill A 模板
@@ -109,7 +110,7 @@ Skill A spec
 - `srs_generation/prompts/skill-c/.gitkeep`
 - `srs_generation/prompts/orchestration/.gitkeep`
 
-### 3.5 PDF 生成与文本层检查脚本
+### 3.5 PDF 生成、文本层检查与可读性 gate 脚本
 
 已创建脚本：
 
@@ -119,10 +120,12 @@ Skill A spec
 
 脚本特点：
 
-- `generate_srs_pdf.py` 优先使用 `reportlab`；若当前 Python 环境缺少 `reportlab`，会使用内置 PDF writer 生成带文本层的 PDF。
+- `generate_srs_pdf.py` 优先使用 `reportlab` 和适合中英文混排的 CJK 字体，修复标题重复、英文异常拆字和标题层级弱化问题；若当前 Python 环境缺少 `reportlab`，会使用内置 PDF writer 生成带文本层的兜底 PDF。
+- `generate_srs_pdf.py` 已按代码审查修复字体候选策略和内置 writer 英文 token 硬切问题。
 - `check_pdf_text_layer.py` 优先使用 `pypdf` / `PyPDF2`；若当前 Python 环境缺少依赖，会使用内置提取逻辑检查文本层。
+- `check_pdf_text_layer.py` 已升级为同时输出 `pdf_text_layer_gate` 和 `pdf_readability_gate`，并按代码审查修复标题识别、标题重复检测和英文异常拆字误报问题。
 - 已通过最小中文 smoke test。
-- 已通过用户管理和角色管理两个样本的 PDF 文本层检查。
+- 已通过用户管理和角色管理两个样本的 PDF 文本层 gate 与可读性 gate。
 
 ## 4. 验证样本
 
@@ -148,7 +151,8 @@ system user management
 
 ```text
 scope_confirm_status: confirmed
-pdf_text_check: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
 gate: pass
 ```
 
@@ -187,7 +191,8 @@ system role management
 
 ```text
 scope_confirm_status: confirmed
-pdf_text_check: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
 gate: pass
 ```
 
@@ -238,7 +243,30 @@ handoff 包包含：
 
 - `srs_generation/reports/skill-a-before-skill-bc-final-report.md`
 
-## 6. 进入 Skill B 前的状态
+## 6. Source-to-SRS Claude Skill 包装状态
+
+已将 Skill A 包装为完整可移植 Claude skill：
+
+```text
+skill name: source-to-srs
+skill path: /root/.claude/skills/source-to-srs/
+```
+
+该 skill 包包含：
+
+- `SKILL.md`
+- `references/`：Skill A 规范文件
+- `templates/`：输出模板
+- `prompts/`：执行 prompts
+- `scripts/`：PDF 生成与 PDF 质量检查脚本
+
+已完成检查：
+
+- Claude Code 已识别 `source-to-srs` 为可用 skill。
+- skill 包内 Python 脚本已通过 `py_compile` 语法检查。
+- 当前版本采用完整可移植方案，不依赖当前项目目录下的脚本才能使用。
+
+## 7. 进入 Skill B 前的状态
 
 进入 Skill B 的前置条件已满足：
 
@@ -246,14 +274,15 @@ handoff 包包含：
 - 至少两个样本验证通过。
 - 两个样本均生成 `kb-friendly` SRS。
 - 两个样本均生成 PDF。
-- 两个样本 PDF 文本层检查均为 pass。
+- 两个样本 PDF 文本层 gate 均为 pass。
+- 两个样本 PDF 可读性 gate 均为 pass。
 - 两个样本均有 `source_evidence_map`。
 - 两个样本均有 `independent_review_report`。
 - 两个样本 gate 均为 pass。
 
 但当前仍按授权停在 Skill B/C 之前。
 
-## 7. 尚未执行的事项
+## 8. 尚未执行的事项
 
 未执行：
 
@@ -265,7 +294,7 @@ handoff 包包含：
 - 未提炼 Skill C 执行约束。
 - 未操作 TestHub 自动化闭环。
 
-## 8. 新会话恢复建议
+## 9. 新会话恢复建议
 
 新会话建议先读取：
 
@@ -289,6 +318,6 @@ Skill B spec
 
 Skill C 建议在 Skill B 通过后启动，避免把执行约束混入纯 SRS 知识库。
 
-## 9. 当前一句话总结
+## 10. 当前一句话总结
 
-当前已完成：**Skill A 从规范、模板、prompt、PDF 脚本到两个样本验证和 handoff 包的完整落地，两个样本均 gate=pass，并已按要求停在 Skill B/C 之前。**
+当前已完成：**Skill A 从规范、模板、prompt、PDF 脚本到两个样本验证和 handoff 包的完整落地，已修复 PDF 标题重复、英文异常拆字和标题层级弱化问题；两个样本均通过 PDF 文本层 gate、PDF 可读性 gate 和 Skill A gate；并已包装为可移植 Claude skill `source-to-srs`，按要求停在 Skill B/C 之前。**

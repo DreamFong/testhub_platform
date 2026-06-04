@@ -113,7 +113,7 @@ score_gap_by_dimension = abs(self_dimension_score - independent_dimension_score)
 - 无硬性不合格项。
 - SRS 覆盖最终纳入范围。
 - source_evidence_map 可支撑关键结论。
-- PDF 文本层可提取。
+- PDF 文本层可提取且可读性 gate 通过。
 - 无阻断级必须修改项。
 
 ### 6.2 conditional pass

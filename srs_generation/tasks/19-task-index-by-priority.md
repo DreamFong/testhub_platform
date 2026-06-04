@@ -24,6 +24,7 @@
 - [ ] 源码事实抽取 prompt
 - [ ] kb-friendly 改写 prompt
 - [ ] PDF 生成与文本层检查
+- [ ] PDF 人类可读性修复
 - [ ] 自评 prompt
 - [ ] 独立评审 prompt
 
@@ -31,6 +32,7 @@
 
 - [02-skill-a-execution-prompts-tasks.md](02-skill-a-execution-prompts-tasks.md)
 - [13-pdf-generation-and-text-check-tasks.md](13-pdf-generation-and-text-check-tasks.md)
+- [36-skill-a-pdf-readability-fix.md](36-skill-a-pdf-readability-fix.md)
 
 ## P2：验证与泛化
 

@@ -27,7 +27,8 @@ run_dir: srs_generation/runs/ruoyi-vue-pro-role-management-20260604/skill-a
 - source_evidence_map：已生成
 - kb-friendly SRS：已生成
 - PDF：已生成
-- PDF 文本层检查：pass
+- PDF 文本层 gate：pass
+- PDF 可读性 gate：pass
 - 自评：pass
 - 独立评审：pass
 - gate：pass
@@ -58,4 +59,4 @@ Skill A 不再只依赖用户管理案例。角色管理样本验证了以下能
 
 ## 6. 结论
 
-角色管理第二样本通过 Skill A gate。Skill A 在进入 Skill B/C 之前的最小验证条件已经满足。
+角色管理第二样本通过 Skill A gate。PDF 已修复标题重复、英文异常拆字和标题层级弱化问题，文本层 gate 与可读性 gate 均为 pass。Skill A 在进入 Skill B/C 之前的最小验证条件已经满足。

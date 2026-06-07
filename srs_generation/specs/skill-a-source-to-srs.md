@@ -88,9 +88,9 @@ Skill A 默认输出 `kb-friendly` SRS，即知识库友好版 SRS。
 
 因此 Skill A 必须先自动推断候选 scope，再由用户确认。未完成 scope confirm，不得进入正式 SRS 生成。
 
-### 3.4 需要 source_evidence_map 的原因
+### 3.4 需要源码依据映射的原因
 
-SRS 是从源码逆向生成的，因此关键结论必须可审计。`source_evidence_map` 用于记录 SRS 中功能、字段、业务规则、权限、异常和验收标准对应的源码依据。
+SRS 是从源码逆向生成的，因此关键结论必须可审计。源码依据映射文件 `source-evidence-map.md` 用于记录 SRS 中功能、字段、业务规则、权限、异常和验收标准对应的源码依据。
 
 它用于：
 
@@ -452,7 +452,7 @@ Skill A 应生成 SRS PDF，并至少检查：
 
 ### 7.2 支撑产物
 
-#### source_evidence_map
+#### source-evidence-map.md
 
 源码依据清单。最低要求：
 
@@ -646,7 +646,7 @@ Skill A 使用 5 个维度评分，每项 5 分，总分 25 分：
 
 - 使用独立上下文。
 - 使用独立提示词。
-- 检查 SRS 与 `source_evidence_map` 的一致性。
+- 检查 SRS 与 `source-evidence-map.md` 的一致性。
 - 检查硬性不合格项。
 - 输出正式评分与 gate 建议。
 
@@ -709,7 +709,7 @@ Skill A 向 Skill B 至少交付：
 
 1. 最终版 SRS Markdown。
 2. 最终版 SRS PDF。
-3. `source_evidence_map`。
+3. 源码依据映射文件 `source-evidence-map.md`。
 4. `independent_review_report`。
 5. `gate-result`。
 6. `pdf_text_check_report`。
@@ -783,7 +783,7 @@ reference_srs: docs/ruoyi-user-management-srs-v2.pdf
 3. 是否有遗漏项？
 ```
 
-### 11.3 source_evidence_map 示例
+### 11.3 source-evidence-map.md 示例
 
 ```text
 FR-USER-001 用户列表查询

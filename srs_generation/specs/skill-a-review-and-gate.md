@@ -21,7 +21,7 @@ Review 与 Gate 机制用于判断 Skill A 生成的 SRS 是否具备进入 Skil
 
 ### 2.2 独立评审 Agent
 
-独立评审 Agent 是默认机器正式评分来源。它应使用独立上下文和独立提示词，对 SRS、source_evidence_map、PDF 检查结果进行核验。
+独立评审 Agent 是默认机器正式评分来源。它应使用独立上下文和独立提示词，对 SRS、源码依据映射文件 `source-evidence-map.md`、PDF 检查结果进行核验。
 
 ### 2.3 人工复核
 
@@ -86,6 +86,16 @@ Review 与 Gate 机制用于判断 Skill A 生成的 SRS 是否具备进入 Skil
 - 异常规则是否有错误码和抛出逻辑依据。
 - 验收标准是否能从功能规则合理推导。
 
+### 4.4 非研发可读性核验要求
+
+独立评审必须额外检查：
+
+- 主文档正文是否以业务语义和系统行为表达为主。
+- 非研发读者是否可以不依赖源码知识直接理解主要功能、规则、异常和验收标准。
+- 是否夹带过多实现细节，例如注解名、接口路径、类名、方法名、DTO/VO/Entity 名称、仓储接口名、SQL 细节、权限码。
+- 权限需求是否优先写成业务权限能力，而不是直接罗列实现侧权限码。
+- 技术追溯信息是否已合理下沉到 `source-evidence-map.md` 或追溯说明，而不是侵入主体章节。
+
 ## 5. 分差处理
 
 ### 5.1 分差计算
@@ -112,8 +122,11 @@ score_gap_by_dimension = abs(self_dimension_score - independent_dimension_score)
 - scope confirm 已完成。
 - 无硬性不合格项。
 - SRS 覆盖最终纳入范围。
-- source_evidence_map 可支撑关键结论。
+- `source-evidence-map.md` 可支撑关键结论。
 - PDF 文本层可提取且可读性 gate 通过。
+- 主文档正文以业务语义和系统行为为主。
+- 非研发读者不依赖源码知识即可理解主要功能、规则、异常和验收标准。
+- 技术追溯细节未过度侵入正文主体。
 - 无阻断级必须修改项。
 
 ### 6.2 conditional pass
@@ -124,6 +137,11 @@ score_gap_by_dimension = abs(self_dimension_score - independent_dimension_score)
 - SRS 主体可用。
 - 存在少量必须修改项。
 - 修复后可进入 Skill B。
+
+典型触发场景：
+
+- 主文档结论基本正确，但正文混入较多实现细节，例如注解名、接口路径、类名、方法名、权限码，影响非研发读者理解。
+- 技术追溯信息没有充分下沉到 `source-evidence-map.md` 或追溯说明，导致主体章节呈现出明显技术实现说明风格。
 
 限制：
 
@@ -162,6 +180,7 @@ conditional pass 不自动进入 Skill B。
 - gate 为 fail。
 - scope confirm 未完成。
 - PDF 文本层不可提取。
+- PDF 可读性 gate fail。
 - 关键 evidence 缺失且未完成人工复核。
 
 ## 9. 人工复核输出

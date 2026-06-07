@@ -5,13 +5,13 @@
 
 ## 1. 目标
 
-`source_evidence_map` 用于记录 SRS 中功能需求、字段规则、业务规则、权限规则、异常处理和验收标准对应的源码依据。它是 Skill A 的强制产物。
+源码依据映射文件 `source-evidence-map.md` 用于记录 SRS 中功能需求、字段规则、业务规则、权限规则、异常处理和验收标准对应的源码依据。它是 Skill A 的强制产物。
 
 关键结论无法提供源码依据时，应触发 fail 或人工复核。
 
 ## 2. 文件格式
 
-`source_evidence_map` 使用 Markdown 文件，建议命名为：
+源码依据映射使用 Markdown 文件，建议命名为：
 
 ```text
 source-evidence-map.md

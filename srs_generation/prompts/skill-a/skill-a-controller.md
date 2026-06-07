@@ -31,7 +31,7 @@ domain_hints: 业务术语或边界提示
 - scope 自动推断
 - scope confirmation 记录
 - 源码事实抽取
-- source_evidence_map 生成
+- 源码依据映射文件 `source-evidence-map.md` 生成
 - SRS factual draft 生成
 - kb-friendly SRS 改写
 - 可选 aligned SRS 改写
@@ -57,7 +57,7 @@ domain_hints: 业务术语或边界提示
 1. scope 自动推断
 2. scope confirmation
 3. 源码事实抽取
-4. source_evidence_map 生成
+4. 源码依据映射文件 `source-evidence-map.md` 生成
 5. SRS factual draft 生成
 6. kb-friendly SRS 改写
 7. PDF 生成与文本层检查
@@ -114,7 +114,7 @@ handoff-summary.md
 ## 质量要求
 
 - 默认输出 `kb-friendly`。
-- 强制产出 `source_evidence_map`。
+- 强制产出源码依据映射文件 `source-evidence-map.md`。
 - PDF 文本层必须可提取。
 - 必须生成自评和独立评审。
 - gate 必须明确为 `pass`、`conditional pass` 或 `fail`。

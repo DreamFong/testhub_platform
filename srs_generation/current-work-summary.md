@@ -382,3 +382,145 @@ git pull
 3. 在独立评审与 gate 中新增“非研发可读性”检查，避免正文虽然事实正确，但仍像技术实现说明。
 
 这一轮修复尚未开始实施；如继续推进，建议先做 prompt / review / gate 三处约束收紧，再决定是否需要补充产物结构调整。
+
+## 12. 2026-06-07 补充：source-to-srs 非研发可读性优化
+
+### 12.1 当前本地最新提交
+
+- 当前分支：`srs-generation-skill-a-prep`
+- 最新本地提交：`619a188`
+- commit message：`docs: 优化 source-to-srs 非研发可读性约束`
+- 该提交尚未在本节记录时确认推送远程。
+
+### 12.2 本次优化目标
+
+本轮优化针对可移植 Claude skill `source-to-srs`，重点解决：
+
+- 主 SRS 正文混入过多实现细节，导致非研发读者阅读困难。
+- 权限码、接口路径、注解名、类名/方法名等技术细节进入正文主体。
+- 独立评审和 gate 过去更偏向判断“事实是否正确”，对“需求表达是否业务可读”的约束不足。
+
+优化目标不是删除技术追溯，而是分层：
+
+```text
+主文档正文：业务语义、系统行为、需求规则
+source-evidence-map.md：接口路径、权限码、注解、类名/方法名等源码依据
+```
+
+### 12.3 已完成的 repo 内改动
+
+已收紧以下 Skill A 规范和 prompt：
+
+- `srs_generation/prompts/skill-a/srs-kb-friendly-rewrite.md`
+  - 明确主文档默认面向业务、产品、测试设计人员和知识库使用者。
+  - 要求正文优先使用业务语义和系统行为描述。
+  - 将“源码依据说明”改为“需求追溯说明”。
+  - 要求技术细节下沉到 `source-evidence-map.md`。
+  - 禁止在主文档正文中直接堆砌 `@PreAuthorize`、接口路径、控制器方法名、DTO/VO/Entity 类名和权限码。
+
+- `srs_generation/prompts/skill-a/independent-review.md`
+  - 新增非研发可读性检查。
+  - 要求识别正文技术细节污染。
+  - 明确正文混入较多实现细节时至少应记为 required fix。
+  - 补齐 `PDF 可读性 gate fail` 为硬性不合格项。
+
+- `srs_generation/specs/skill-a-review-and-gate.md`
+  - `pass` 条件新增：正文以业务语义为主、非研发可读、技术追溯不侵入主体。
+  - `conditional pass` 触发条件新增：正文混入较多实现细节或技术追溯未充分下沉。
+  - “不得进入 Skill B”条件补齐 `PDF 可读性 gate fail`。
+
+- `srs_generation/specs/skill-a-scorecard.md`
+  - “需求表达质量”评分纳入非研发可读性和技术细节污染。
+
+- `srs_generation/prompts/skill-a/skill-a-controller.md`
+- `srs_generation/specs/skill-a-source-evidence-map.md`
+- `srs_generation/specs/skill-a-source-to-srs.md`
+  - 统一 `source_evidence_map` / `source-evidence-map.md` 口径。
+  - 具体文件统一写为 `source-evidence-map.md`，概念表述为“源码依据映射文件”。
+
+### 12.4 已同步 portable skill
+
+同类改动已同步到实际可调用的 portable skill：
+
+```text
+/root/.claude/skills/source-to-srs/
+```
+
+涉及：
+
+- `prompts/srs-kb-friendly-rewrite.md`
+- `prompts/independent-review.md`
+- `prompts/skill-a-controller.md`
+- `references/skill-a-review-and-gate.md`
+- `references/skill-a-scorecard.md`
+- `references/skill-a-source-evidence-map.md`
+- `references/skill-a-source-to-srs.md`
+
+### 12.5 已完成的验证 run
+
+为验证本轮优化效果，新增三组 Skill A 验证产物：
+
+#### 用户管理回归验证
+
+目录：
+
+- `srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-a/`
+
+结果：
+
+```text
+gate: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
+```
+
+结论：主文档更偏业务表达，技术细节主要下沉到 `source-evidence-map.md`。
+
+#### ERP 仓库管理验证
+
+目录：
+
+- `srs_generation/runs/ruoyi-vue-pro-erp-warehouse-validation-20260607/skill-a/`
+
+结果：
+
+```text
+gate: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
+independent_review: pass, 24/25
+```
+
+结论：正文未明显泄漏 `@PreAuthorize`、接口路径、类名/方法名、原始权限码；技术依据主要进入 `source-evidence-map.md`。
+
+#### MES 盘点任务验证
+
+目录：
+
+- `srs_generation/runs/ruoyi-vue-pro-mes-stocktaking-task-validation-20260607/skill-a/`
+
+结果：
+
+```text
+gate: pass
+pdf_text_layer_gate: pass
+pdf_readability_gate: pass
+risk-items.md: generated
+```
+
+结论：复杂业务规则模块下，可读性优化仍生效；盘点差异 `count` 正负业务口径风险被显式记录，没有被强行写死为确定需求。
+
+### 12.6 当前工作区注意事项
+
+- 用户已自行删除已跟踪文件 `ragflow-testhub-minimal-flow-handoff.md`；该删除不属于 `619a188` 提交内容。
+- 该删除是否最终提交，需由用户单独决定。
+- 当前 `source-to-srs` 优化已完成本地提交，但本节记录时尚未确认是否推送远程。
+
+### 12.7 下一步建议
+
+建议下一步先处理工作区状态：
+
+1. 确认是否提交或保留 `ragflow-testhub-minimal-flow-handoff.md` 的删除。
+2. 将本总结文件更新单独提交。
+3. 如需远程同步，再推送当前分支。
+4. 之后再决定是否进入 Skill B，或继续追加更多 `source-to-srs` 验证样本。

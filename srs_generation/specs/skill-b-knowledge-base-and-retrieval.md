@@ -1,14 +1,14 @@
-# Skill B：知识库构建与检索验证规范（Offline MVP）
+# Skill B：知识库构建与检索验证规范（Hybrid MVP）
 
-版本：v0.1  
+版本：v0.2  
 状态：draft  
-适用阶段：Skill B 规范固化与离线 MVP 设计
+适用阶段：Skill B Hybrid MVP 设计与首个真实样例验证
 
 ## 1. 文档目的
 
-本文档用于规范 Skill B 的职责、输入、输出、执行流程、门禁语义与交接方式。Skill B 的目标是把 Skill A 产出的 SRS 文档转化为适合进入 RAGFlow 知识库链路的标准输入，并在真实 RAGFlow 不可用时先完成离线准备度验证。
+本文档用于规范 Skill B 的职责、输入、输出、执行流程、门禁语义与交接方式。Skill B 的目标是把 Skill A 产出的 SRS 文档转化为适合进入 RAGFlow 知识库链路的标准输入，先完成离线准备度验证，再在 RAGFlow 可访问且经用户确认后执行最小真实 online 验证。
 
-Skill B 不是单次实验记录。当前 ERP 仓库管理与 MES 盘点任务样本只作为 Skill B Offline MVP 的候选验证样本，用于校验规范是否可复现、可迁移、可交接。
+Skill B 不是单次实验记录。当前用户管理、ERP 仓库管理与 MES 盘点任务样本用于校验 Skill B Hybrid MVP 是否可复现、可迁移、可交接。
 
 ## 2. 适用范围与非适用范围
 
@@ -31,7 +31,8 @@ Skill A handoff
 → retrieval 问题集生成
 → 离线可检索性预检
 → offline_readiness_gate
-→ online_retrieval_gate（真实 RAGFlow 可用时）
+→ 用户确认后执行真实 RAGFlow online 验证
+→ online_retrieval_gate
 → Skill C / 总编排 handoff
 ```
 
@@ -75,18 +76,22 @@ Skill B 最终应能回答：
 - 当前阶段是否允许进入真实 RAGFlow online 验证？
 - 当前阶段是否允许交给后续 Skill C / 总编排等待继续？
 
-### 3.2 Offline MVP 的原因
+### 3.2 Hybrid MVP 的原因
 
-当前阶段没有可用 RAGFlow 供访问，因此 Skill B 不能立即执行真实建库、真实 chunk 检查和真实 retrieval sanity check。
-
-因此 Skill B 需要拆分为两层：
+Skill B 仍需要拆分为两层：
 
 ```text
 offline_readiness_gate：不依赖 RAGFlow，判断文档是否具备建库准备条件
 online_retrieval_gate：依赖 RAGFlow，判断真实知识库是否检索可用
 ```
 
-Offline MVP 先解决：
+之所以采用 Hybrid MVP，而不是直接跳到完整 online 版，是因为当前阶段仍需要同时保留：
+
+- 不依赖外部系统的离线准备度评审能力。
+- RAGFlow 可访问时的最小真实验证能力。
+- 环境不可用或用户未确认外部操作时的 blocked 语义。
+
+Hybrid MVP 先解决：
 
 - 输入契约。
 - 输出契约。
@@ -94,7 +99,7 @@ Offline MVP 先解决：
 - 解析配置计划模板。
 - retrieval 问题集模板。
 - 离线可检索性预检规则。
-- blocked 语义。
+- online 最小验证与 blocked 语义。
 
 ### 3.3 设计原则
 
@@ -104,13 +109,16 @@ Skill B 必须遵守以下原则：
    涉及真实 RAGFlow 建库、上传和检索的动作必须先输出计划，再由用户确认。
 
 2. **不伪造 online 结果**  
-   RAGFlow 不可用时，`online_retrieval_gate` 只能是 `blocked`，不能伪造 `dataset_id`、`chunk_count` 或 `pass` 结果。
+   若真实 online 阶段未执行或不可执行，`online_retrieval_gate` 只能是 `blocked`，不能伪造 `dataset_id`、`chunk_count` 或 `pass` 结果。
 
 3. **离线预检不替代真实检索**  
    离线阶段只能判断“是否值得建库”，不能宣布“知识库已经可检索”。
 
 4. **风险显式暴露**  
    Skill A 已识别的风险项必须进入 Skill B 的问题集、预检报告或 handoff，不得在中间阶段消失。
+
+5. **离线通过不等于在线通过**  
+   `offline_readiness_gate = pass` 仅表示当前文档具备进入真实 online 验证的准备条件，不代表真实知识库检索已经通过。
 
 ## 4. 输入契约
 
@@ -146,7 +154,7 @@ Skill A PDF 文本层与可读性检查报告。
 
 #### srs-kb-friendly.pdf
 
-Skill A 生成的最终 PDF 文档。它作为正式交付阅读版、PDF gate 证明材料和未来 parser 对比实验候选物保留；Offline MVP 中默认作为参考输入，不作为主分析输入，也不默认作为主知识库上传材料。
+Skill A 生成的最终 PDF 文档。它作为正式交付阅读版、PDF gate 证明材料和未来 parser 对比实验候选物保留；Hybrid MVP 中默认作为参考输入，不作为主分析输入，也不默认作为主知识库上传材料。
 
 #### risk-items.md
 
@@ -162,11 +170,11 @@ Skill A 生成的最终 PDF 文档。它作为正式交付阅读版、PDF gate �
 
 #### api_docs_path
 
-未来扩展到 API docs KB 时可选。Offline MVP 默认不启用。
+未来扩展到 API docs KB 时可选。Hybrid MVP 默认不启用。
 
 ### 4.3 输入前置条件
 
-Skill B Offline MVP 的前置条件为：
+Skill B Hybrid MVP 的前置条件为：
 
 ```text
 Skill A gate = pass
@@ -182,7 +190,7 @@ Skill A gate = conditional pass，且人工明确允许继续
 
 说明：
 
-- `srs-kb-friendly.md` 是 Skill B Offline MVP 的主分析输入，也是主 RAGFlow SRS 知识库的默认上传候选。
+- `srs-kb-friendly.md` 是 Skill B Hybrid MVP 的主分析输入，也是主 RAGFlow SRS 知识库的默认上传候选。
 - `srs-kb-friendly.pdf` 是参考输入，不是当前 MVP 的主分析输入。
 - `source-evidence-map.md` 是必填分析输入，但不默认上传到主 RAGFlow SRS 知识库。
 
@@ -195,9 +203,9 @@ Skill A gate = conditional pass，且人工明确允许继续
 
 ## 5. 输出契约
 
-### 5.1 Offline MVP 固定输出
+### 5.1 Hybrid MVP 固定离线输出
 
-Skill B Offline MVP 至少输出：
+Skill B Hybrid MVP 至少输出：
 
 1. `input-snapshot.md`
 2. `kb-plan.md`
@@ -207,22 +215,22 @@ Skill B Offline MVP 至少输出：
 6. `retrieval-gate-result.md`
 7. `skill-b-handoff.md`
 
-### 5.2 暂不输出的 online 产物
+### 5.2 online 产物规则
 
-真实 RAGFlow 不可用时，以下文件不应伪造：
+若真实 online 阶段尚未执行，以下文件不应伪造：
 
 - `dataset-record.md`
 - `upload-record.md`
 - `chunk-quality-report.md`
 - `online-retrieval-check-report.md`
 
-这些文件应在真实 online 阶段补充。
+若真实 online 阶段已执行，这些文件应作为真实记录补充输出。
 
 ## 6. 知识库创建 / 复用规则（计划层）
 
-### 6.1 Offline MVP 允许输出的内容
+### 6.1 Hybrid MVP 允许输出的内容
 
-Offline MVP 允许输出：
+Hybrid MVP 允许输出：
 
 - 是否建议创建新知识库。
 - 是否建议复用已有知识库。
@@ -231,7 +239,7 @@ Offline MVP 允许输出：
 - 建议解析配置。
 - 后续真实操作所需用户确认项。
 
-Offline MVP 默认上传策略为：
+Hybrid MVP 默认上传策略为：
 
 ```text
 默认上传：srs-kb-friendly.md
@@ -240,9 +248,9 @@ Offline MVP 默认上传策略为：
 
 若需要比较 Markdown / PDF 的 parser 或 retrieval 效果，应通过独立对比实验执行，而不是先把 Markdown 与 PDF 一起上传到同一个主知识库。
 
-### 6.2 Offline MVP 禁止输出的内容
+### 6.2 Hybrid MVP 禁止输出的内容
 
-Offline MVP 禁止输出：
+Hybrid MVP 禁止输出：
 
 - 伪造 `dataset_id`。
 - 伪造文档上传成功状态。
@@ -360,48 +368,51 @@ Skill B 自动生成的问题集至少覆盖：
 
 #### blocked
 
-当真实 RAGFlow 不可用时，固定输出：
+以下任一成立时，输出：
 
 ```text
 online_retrieval_gate: blocked
-blocked_reason: RAGFlow unavailable
+blocked_reason: RAGFlow unavailable | external action not approved | online step not executed yet
 ```
 
 #### pass / conditional pass / fail
 
-仅在真实 RAGFlow 可用且已执行建库、解析、chunk 检查与 retrieval sanity check 后允许使用。
+仅在真实 online 阶段已执行建库、解析、chunk 检查与 retrieval sanity check 后允许使用。
 
 ### 9.3 总体状态字段
 
 建议输出：
 
 ```text
-skill_b_status: offline_ready | blocked_waiting_ragflow | fail
+skill_b_status: offline_ready_pending_online | online_verified | online_verified_with_risks | blocked_waiting_confirmation | blocked_ragflow_unavailable | fail
 ```
 
 语义：
 
-- `offline_ready`：离线预检通过，且 online 阶段也已通过。
-- `blocked_waiting_ragflow`：离线预检已完成，但 online 阶段因 RAGFlow 不可用而 blocked。
+- `offline_ready_pending_online`：离线预检通过，但尚未执行真实 online 验证。
+- `online_verified`：离线预检通过，且真实 online 阶段通过。
+- `online_verified_with_risks`：真实 online 阶段通过，但仍有已披露风险项需带条件继续。
+- `blocked_waiting_confirmation`：具备继续条件，但外部操作尚未获用户确认。
+- `blocked_ragflow_unavailable`：离线预检已完成，但 online 阶段因 RAGFlow 不可用而 blocked。
 - `fail`：离线或在线阶段存在阻断问题。
 
 ## 10. 交接规则
 
 ### 10.1 交给 Skill C / 总编排的最小内容
 
-Skill B Offline MVP 至少交付：
+Skill B Hybrid MVP 至少交付：
 
 - 当前输入快照
 - 知识库计划
 - 解析配置计划
 - retrieval 问题集
 - offline_readiness_gate 结果
-- online_retrieval_gate blocked 原因
+- online_retrieval_gate 结果或 blocked 原因
 - 风险项摘要
 
 ### 10.2 不允许的误导性结论
 
-真实 RAGFlow 不可用时，不得写出：
+若真实 online 阶段尚未执行，不得写出：
 
 ```text
 knowledge_base_ready_for_execution = true
@@ -410,18 +421,32 @@ dataset_id = fake_xxx
 chunk_count = 123
 ```
 
-只能明确写为：
+只能根据实际情况明确写为：
 
 ```text
 online_retrieval_gate = blocked
-blocked_reason = RAGFlow unavailable
+blocked_reason = RAGFlow unavailable | external action not approved | online step not executed yet
 ```
 
-## 11. Offline MVP 推荐样本
+## 11. Hybrid MVP 推荐样本
 
 ### 11.1 首个样本
 
 建议优先使用：
+
+```text
+srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-a/
+```
+
+原因：
+
+- 历史上下文最完整。
+- 已通过 Skill A 非研发可读性优化验证。
+- 适合作为 Skill B Hybrid MVP 的首个真实验证样例。
+
+### 11.2 第二个样本
+
+建议使用：
 
 ```text
 srs_generation/runs/ruoyi-vue-pro-erp-warehouse-validation-20260607/skill-a/
@@ -431,9 +456,9 @@ srs_generation/runs/ruoyi-vue-pro-erp-warehouse-validation-20260607/skill-a/
 
 - 刚完成非研发可读性优化验证。
 - 技术细节已下沉到 `source-evidence-map.md`。
-- 适合作为 Skill B Offline MVP 的首个样例。
+- 适合作为第二个结构化业务样例。
 
-### 11.2 第二个样本
+### 11.3 第三个样本
 
 建议使用：
 
@@ -448,4 +473,4 @@ srs_generation/runs/ruoyi-vue-pro-mes-stocktaking-task-validation-20260607/skill
 
 ## 12. 一句话结论
 
-Skill B Offline MVP 的职责是：**在真实 RAGFlow 不可用时，先把 Skill A 产出的 SRS 文档转化为可建库、可提问、可交接的标准输入，并明确给出 offline_readiness_gate 与 online_retrieval_gate blocked 语义，而不是伪造真实知识库结果。**
+Skill B Hybrid MVP 的职责是：**先把 Skill A 产出的 SRS 文档转化为可建库、可提问、可交接的标准输入，完成 offline_readiness_gate，并在 RAGFlow 可访问且经用户确认后执行最小真实 online 验证；若 online 阶段未执行，则明确给出 blocked 语义，而不是伪造真实知识库结果。**

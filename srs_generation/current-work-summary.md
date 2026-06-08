@@ -524,3 +524,277 @@ risk-items.md: generated
 2. 将本总结文件更新单独提交。
 3. 如需远程同步，再推送当前分支。
 4. 之后再决定是否进入 Skill B，或继续追加更多 `source-to-srs` 验证样本。
+
+## 13. 2026-06-08 补充：Skill B Offline 设计骨架
+
+### 13.1 当前本地最新提交
+
+- 当前分支：`srs-generation-skill-a-prep`
+- 最新本地提交：`b29b579`
+- commit message：`docs: 初始化 Skill B offline 设计骨架`
+- 本节记录时尚未确认是否推送远程。
+
+### 13.2 当前背景约束
+
+- 当前没有可用 RAGFlow 供访问。
+- Skill B 当前不做真实建库、真实 parser、真实 chunk 检查、真实 retrieval sanity check。
+- 当前阶段先推进 **Skill B Offline MVP**，把输入契约、输出契约、问题集与 blocked 语义落盘。
+
+### 13.3 已确认的 Skill B 能力边界
+
+Skill B 当前边界已确认：
+
+- 负责：知识库创建/复用计划、解析配置计划、retrieval 问题集生成、离线可检索性预检、offline_readiness_gate、online_retrieval_gate blocked 语义、handoff 打包。
+- 不负责：生成或修改 SRS、生成 TestHub scenario JSON、执行 TestHub、失败诊断、替业务裁决不确定规则、伪造真实 RAGFlow 结果。
+
+### 13.4 已确认的输入与上传策略
+
+当前口径：
+
+```text
+主分析输入 / 主上传候选：srs-kb-friendly.md
+必填分析输入 / 默认不上传：source-evidence-map.md
+参考输入 / 默认不上传：srs-kb-friendly.pdf
+```
+
+补充说明：
+
+- `source-evidence-map.md` 是 Skill B 的必填分析输入，用于辅助追溯、风险判断和问题集补强，但不默认上传到主 RAGFlow SRS 知识库。
+- `srs-kb-friendly.pdf` 用于正式交付阅读、PDF gate 证明和未来 parser / retrieval 对比实验，不是当前 Offline MVP 的主分析输入。
+- 若后续要比较 Markdown / PDF 的建库效果，应通过独立实验执行，而不是先把二者上传到同一个主知识库。
+
+### 13.5 已落盘的 Skill B Offline 文件
+
+#### spec
+
+- `srs_generation/specs/skill-b-knowledge-base-and-retrieval.md`
+
+#### templates
+
+- `srs_generation/templates/skill-b-input-snapshot.md`
+- `srs_generation/templates/kb-plan.md`
+- `srs_generation/templates/parse-config-plan.md`
+- `srs_generation/templates/retrieval-question-set.md`
+- `srs_generation/templates/offline-retrieval-readiness-report.md`
+- `srs_generation/templates/retrieval-gate-result.md`
+- `srs_generation/templates/skill-b-handoff.md`
+
+#### prompts
+
+- `srs_generation/prompts/skill-b/skill-b-controller.md`
+- `srs_generation/prompts/skill-b/retrieval-question-generation.md`
+- `srs_generation/prompts/skill-b/offline-readiness-review.md`
+- `srs_generation/prompts/skill-b/retrieval-gate.md`
+
+### 13.6 Gate 语义
+
+当前已明确：
+
+```text
+offline_readiness_gate: pass | conditional pass | fail
+online_retrieval_gate: blocked | pass | conditional pass | fail
+```
+
+当真实 RAGFlow 不可用时，必须输出：
+
+```text
+online_retrieval_gate: blocked
+blocked_reason: RAGFlow unavailable
+```
+
+不得伪造：
+
+- `dataset_id`
+- `chunk_count`
+- 真实 retrieval 命中结果
+- `online_retrieval_gate = pass`
+
+### 13.7 首个离线样例选择
+
+已确认首个 Skill B Offline 样例使用：
+
+- `srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-a/`
+
+建议输出目录：
+
+- `srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-b-offline/`
+
+选择原因：
+
+- 用户管理样本最成熟，历史上下文最完整。
+- 已通过 Skill A 非研发可读性优化验证。
+- 适合作为 Skill B Offline 首个结构样例。
+
+### 13.8 当前停留点
+
+当前已经完成：
+
+- Skill B Offline spec
+- Skill B Offline templates
+- Skill B Offline prompts
+
+当前尚未执行：
+
+- 尚未运行首个 `skill-b-offline` 样例
+- 尚未生成 `ruoyi-vue-pro-user-management-20260606-validation/skill-b-offline/` 产物
+- 尚未决定是否将 `b29b579` 推送远程
+
+### 13.9 下一步建议
+
+建议下一步按以下顺序推进：
+
+1. 将本总结补充单独提交。
+2. 如需远程同步，推送当前分支。
+3. 基于用户管理样例运行首个 `skill-b-offline` 样例。
+4. 检查问题集、offline-readiness-report、retrieval-gate-result 和 handoff 是否满足预期。
+5. 样例通过后，再决定是否扩展到 ERP 仓库管理和 MES 盘点任务的 `skill-b-offline` 样例。
+
+## 14. 2026-06-08 补充：Skill B Hybrid MVP 与首个 online 验证
+
+### 14.1 当前方向变化
+
+由于当前已恢复对 RAGFlow 的访问，Skill B 目标已从原先的 **Offline MVP** 调整为 **Hybrid MVP**：
+
+```text
+先完成离线准备度验证
+再在 RAGFlow 可访问且用户确认后执行最小真实 online 验证
+```
+
+已完成的 repo 内语义收敛包括：
+
+- `srs_generation/specs/skill-b-knowledge-base-and-retrieval.md`
+- `srs_generation/prompts/skill-b/skill-b-controller.md`
+- `srs_generation/prompts/skill-b/offline-readiness-review.md`
+- `srs_generation/prompts/skill-b/retrieval-gate.md`
+- `srs_generation/templates/retrieval-gate-result.md`
+- `srs_generation/templates/skill-b-handoff.md`
+
+收敛内容包括：
+
+- `online_retrieval_gate` 不再默认写死为 `blocked`。
+- 新增 `blocked_reason = RAGFlow unavailable | external action not approved | online step not executed yet` 语义。
+- `allowed_next_stage` 从“等 RAGFlow”扩展为可进入 `request_online_execution | skill_c | orchestration | manual_fix`。
+- `skill_c` 与 `orchestration` 的职责边界已在 gate 模板中补充说明。
+
+### 14.2 用户管理样例的三次 online 尝试
+
+首个 online 样例仍使用：
+
+- `srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-a/`
+
+#### 尝试一：Markdown 直传
+
+上传材料：
+
+- `srs-kb-friendly.md`
+
+结果：
+
+```text
+online_retrieval_gate: blocked
+```
+
+原因：
+
+- 当前 RAGFlow 环境不支持 `.md` 作为可解析文档类型。
+- 上传成功，但解析失败，无法生成 chunks。
+
+#### 尝试二：PDF 上传
+
+上传材料：
+
+- `srs-kb-friendly.pdf`
+
+结果：
+
+```text
+解析成功，但不接受为主 handoff 结果
+```
+
+原因：
+
+- 虽完成 OCR、布局分析、切块与嵌入，但人工抽检发现存在“相邻章节标题串接、正文内容丢失”的结构性问题。
+- 示例现象：两个 FR 标题被串成一个 chunk，而中间正文未被稳定挂接。
+- 因此 PDF 方案不能视为当前可接受的主知识库载体。
+
+#### 尝试三：TXT 临时载体上传
+
+上传材料：
+
+- `/tmp/ruoyi-pro-user-management-srs-20260608.txt`
+- 该文件由 `srs-kb-friendly.md` 临时转出，仅用于 RAGFlow online 验证，不写回仓库。
+
+结果：
+
+```text
+online_retrieval_gate: conditional pass
+skill_b_status: online_verified_with_risks
+```
+
+实际结果：
+
+- dataset 名称：`ruoyi-pro-user-management-srs-txt-20260608`
+- `SRS_KB_ID = 00c0dbdc632111f18243434b552cc465`
+- `document_id = 00c783a6632111f18243434b552cc465`
+- parse status：`DONE`
+- `chunk_method = book`
+- `chunk_count = 37`
+
+### 14.3 TXT 方案相对 PDF 的结论
+
+TXT 方案明显优于 PDF 方案：
+
+- 未再出现“只有标题、没有正文”的孤立短块。
+- 未再出现明显“相邻 FR 标题串接、正文丢失”的结构问题。
+- 多数 chunk 形态为“章节标题 + 完整规则/需求句”。
+
+仍存在的轻度噪声：
+
+- 顶层文档标题会重复进入多个 chunk。
+- 该问题不阻断当前业务型检索使用，但建议下游 retrieval 至少查看 top 3，而不是只依赖 top 1。
+
+### 14.4 Retrieval sanity check 结果
+
+TXT 方案下，6 道检索题结果为：
+
+```text
+5 命中
+1 弱命中
+0 未命中
+```
+
+命中类型覆盖：
+
+- 功能需求问题
+- 规则类问题
+- 异常/边界问题
+
+弱命中问题为：
+
+- 源码证据追溯题
+
+原因：
+
+- 当前主知识库只上传了 SRS TXT 载体，未上传 `source-evidence-map.md`。
+- 因此当前知识库只能稳定回答“证据已下沉到 source-evidence-map.md”这一说明层，不能直接返回更细的 controller / service / permission 明细。
+
+### 14.5 当前 handoff 结论
+
+当前建议以 TXT 方案作为用户管理样例的主 Skill B handoff：
+
+- `PROJECT_NAME = ruoyi-pro`
+- `BUSINESS_DOMAIN = user management`
+- `TEST_SCOPE = 用户新增、编辑、启停用、唯一性校验、权限约束、异常提示`
+- `MIN_BUSINESS_FLOW = 查询用户列表 → 新增用户 → 编辑用户 → 禁用用户`
+- `SRS_KB_ID = 00c0dbdc632111f18243434b552cc465`
+- `API_DOCS_KB_ID =`
+- `KNOWN_CAVEATS = 证据追溯仅弱命中到 SRS 说明层，未覆盖 evidence map 细粒度源码证据`
+
+对应样例级产物已补充到：
+
+- `srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-b/retrieval-gate-result.md`
+- `srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-b/skill-b-handoff.md`
+
+### 14.6 当前一句话判断
+
+当前用户管理样例已经完成 Skill B Hybrid MVP 的首个真实 online 验证；其中 Markdown 在当前环境不可解析，PDF 可解析但结构不可靠，TXT 临时载体在 `book` 模式下得到稳定得多的 chunk 与检索结果，因此当前主 handoff 应采用 TXT 方案生成的 `SRS_KB_ID`，并在后续进入 Skill C 时明确：业务检索可依赖当前 SRS_KB，源码级证据追溯仍需借助 `source-evidence-map.md` 或未来独立 evidence KB。

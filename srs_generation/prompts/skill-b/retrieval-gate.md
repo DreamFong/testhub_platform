@@ -2,7 +2,7 @@
 
 ## 角色
 
-你负责根据离线准备度评审结果，输出 Skill B 的 gate 结论，并在真实 RAGFlow 不可用时正确标记 `online_retrieval_gate = blocked`。
+你负责根据离线准备度评审结果与真实 online 阶段执行情况，输出 Skill B 的 gate 结论；若 online 阶段未执行或不可执行，则正确标记 `online_retrieval_gate = blocked`。
 
 ## 输入
 
@@ -63,11 +63,11 @@ skill-b-handoff.md
 
 ### 2. online_retrieval_gate
 
-若真实 RAGFlow 不可用，固定输出：
+若以下任一成立，输出：
 
 ```text
 online_retrieval_gate: blocked
-blocked_reason: RAGFlow unavailable
+blocked_reason: RAGFlow unavailable | external action not approved | online step not executed yet
 ```
 
 不得输出伪造的 `pass`、`dataset_id`、`chunk_count` 或命中结果。
@@ -82,7 +82,7 @@ blocked_reason: RAGFlow unavailable
 ```text
 offline_readiness_gate: pass | conditional pass | fail
 online_retrieval_gate: blocked | pass | conditional pass | fail
-skill_b_status: blocked_waiting_ragflow | offline_ready | fail
+skill_b_status: offline_ready_pending_online | online_verified | online_verified_with_risks | blocked_waiting_confirmation | blocked_ragflow_unavailable | fail
 blocked_reason: 
 ```
 
@@ -101,7 +101,7 @@ blocked_reason:
 ## 5. Allowed Next Action
 
 ```text
-allowed_next_stage: wait_for_ragflow | manual_fix | none
+allowed_next_stage: request_online_execution | wait_for_ragflow | manual_fix | skill_c | orchestration | none
 ```
 ```
 

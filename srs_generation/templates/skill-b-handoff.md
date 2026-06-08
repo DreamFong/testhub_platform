@@ -4,6 +4,7 @@
 
 ```text
 status: 
+execution_mode: offline_only | hybrid_mvp
 offline_readiness_gate: 
 online_retrieval_gate: 
 skill_b_status: 
@@ -27,6 +28,8 @@ recommended_kb_action: create_new | reuse_existing | blocked
 recommended_kb_name: 
 recommended_document_set: 
 requires_user_confirmation: true | false
+online_execution_requested: true | false
+online_execution_completed: true | false
 ```
 
 ## 4. 解析配置计划摘要
@@ -35,6 +38,8 @@ requires_user_confirmation: true | false
 parse_strategy_summary: 
 chunk_strategy_summary: 
 real_parser_executed: true | false
+real_chunk_result_available: true | false
+retrieval_sanity_check_executed: true | false
 ```
 
 ## 5. 检索问题集摘要
@@ -65,7 +70,7 @@ blocked_reason:
 
 ## 8. 后续动作建议
 
-### 8.1 RAGFlow 可用后应执行
+### 8.1 若尚未完成 online 验证，应执行
 
 - 创建或复用知识库。
 - 上传计划文档集。
@@ -79,6 +84,7 @@ blocked_reason:
 - 不得宣称知识库已真实通过检索验证。
 - 不得伪造 dataset_id、chunk_count 或 retrieval 命中结果。
 - 不得绕过 blocked 状态直接进入执行链路。
+- 不得把 offline_readiness_gate = pass 直接解释为可进入 TestHub 执行链路。
 
 ## 9. 一句话交接结论
 

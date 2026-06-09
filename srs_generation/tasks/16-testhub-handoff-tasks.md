@@ -1,5 +1,7 @@
 # TestHub Handoff 任务清单
 
+> 当前状态：本文件后续由 `../exec-plans/active/plan-0005-skill-c-and-orchestration-readiness.md` 接续；当前仍保留作历史拆分清单。
+
 ## 目标
 
 定义 SRS Skill 化链路最终如何把需求知识、知识库结果和执行约束交给 TestHub，支撑后续自动化测试生成与执行。

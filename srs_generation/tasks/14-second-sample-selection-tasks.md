@@ -1,5 +1,7 @@
 # 第二验证样本选择任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，作为历史验证选样清单保留。
+
 ## 目标
 
 选择一个不同于 RuoYi-Vue-Pro 用户管理的样本模块，用于验证 Skill A 的迁移能力。

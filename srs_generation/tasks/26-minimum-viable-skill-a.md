@@ -1,5 +1,7 @@
 # 最小可行 Skill A 任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，作为历史里程碑清单保留。
+
 ## 目标
 
 定义一个最小但完整的 Skill A 版本，避免一开始就把 A/B/C 全链路做得过大。

@@ -1,5 +1,7 @@
 # Skill A 规范固化任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，作为历史拆分清单保留。
+
 ## 目标
 
 将 Skill A 从讨论稿收敛为正式规范，明确它如何从源码逆向生成 SRS 文档，以及如何判断文档是否可进入 Skill B。

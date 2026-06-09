@@ -1,5 +1,7 @@
 # SRS Skill 化总实施路线图任务清单
 
+> 当前状态：本文件的已完成主线已分别归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md` 与 `../exec-plans/completed/plan-0002-skill-b-hybrid-mvp-and-online-validation.md`；未来 Skill C / 总编排主线由 `../exec-plans/active/plan-0005-skill-c-and-orchestration-readiness.md` 接续。本文件保留为历史路线图快照。
+
 ## 目标
 
 将已经跑通的“源码逆向生成 SRS → PDF → RAGFlow 验证 → TestHub 闭环”案例，沉淀为可复用、可评审、可编排的 Skill 能力链。

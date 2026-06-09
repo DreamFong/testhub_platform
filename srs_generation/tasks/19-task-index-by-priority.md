@@ -1,5 +1,7 @@
 # 按优先级排列的任务索引
 
+> 当前状态：本文件是旧 `tasks/` 目录下的历史优先级快照。新的 live priority 应记录在 `../exec-plans/active/` 对应计划中；本文件仅保留作追溯参考。
+
 ## P0：必须先完成
 
 - [ ] Skill A spec 正式化

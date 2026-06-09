@@ -1,5 +1,7 @@
 # 下一步行动清单
 
+> 当前状态：本文件保留为历史 next-actions 快照。当前 live 下一步请以 `../exec-plans/active/` 中的计划和 `../current-work-summary.md` 为准。
+
 ## 立即下一步
 
 - [ ] 创建 `srs_generation/specs/` 目录

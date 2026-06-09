@@ -1,5 +1,7 @@
 # Skill A PDF 可读性修复任务拆解
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，作为历史修复清单保留。
+
 ## 1. 背景
 
 当前 Skill A 已经完成规范、模板、prompt、PDF 脚本、两个样本验证和 handoff 包。已有样本的 PDF 文本层检查为 `pass`，但用户在查看用户管理样本 PDF 时发现明显阅读体验问题：

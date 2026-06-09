@@ -1,5 +1,7 @@
 # 产物目录与文件命名任务清单
 
+> 当前状态：本文件的已确定部分已收敛到 `../specs/artifact-run-standard.md`；其余未来阶段内容由 `../exec-plans/active/plan-0005-skill-c-and-orchestration-readiness.md` 接续。
+
 ## 目标
 
 统一 SRS Skill 化链路的输出目录和文件命名，降低后续审计、复用、对比和自动编排成本。

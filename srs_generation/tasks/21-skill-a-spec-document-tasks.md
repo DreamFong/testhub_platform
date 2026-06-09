@@ -1,5 +1,7 @@
 # Skill A 正式 Spec 文档编写任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，作为历史拆分清单保留。
+
 ## 目标
 
 把 Skill A spec v0.2 从讨论稿整理成正式文档，建议路径为 `srs_generation/specs/skill-a-source-to-srs.md`。

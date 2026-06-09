@@ -1,5 +1,7 @@
 # Skill B 知识库构建与检索验证任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0002-skill-b-hybrid-mvp-and-online-validation.md`，作为历史拆分清单保留。
+
 ## 目标
 
 将 Skill A 产出的 SRS / API docs 转化为 RAGFlow 知识库，并评估 chunk 与检索质量，判断是否可进入后续 TestHub 自动化闭环。

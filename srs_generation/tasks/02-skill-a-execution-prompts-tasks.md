@@ -1,5 +1,7 @@
 # Skill A 可执行化与 Prompt 任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，作为历史拆分清单保留。
+
 ## 目标
 
 把 Skill A 规范转化为可执行的 prompt、流程步骤和输出文件约定，使其可以稳定执行。

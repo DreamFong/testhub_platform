@@ -1,5 +1,7 @@
 # 后续文件创建清单
 
+> 当前状态：本文件保留为历史文件创建快照。当前 live 目录入口与新增文档落点请以 `../README.md`、`../specs/README.md`、`../exec-plans/README.md` 与 `../design-docs/index.md` 为准。
+
 ## 目标
 
 记录完成任务清单之后，下一批应该创建的正式 spec、prompt、template 文件。

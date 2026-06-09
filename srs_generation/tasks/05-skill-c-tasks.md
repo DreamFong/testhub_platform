@@ -1,5 +1,7 @@
 # Skill C 执行约束增强任务清单
 
+> 当前状态：本文件后续由 `../exec-plans/active/plan-0005-skill-c-and-orchestration-readiness.md` 接续；当前仍保留作历史拆分清单。
+
 ## 目标
 
 从真实跑通案例、接口调用结果和 TestHub 执行经验中提炼执行约束，补充纯 SRS 不包含但自动化闭环需要的规则。

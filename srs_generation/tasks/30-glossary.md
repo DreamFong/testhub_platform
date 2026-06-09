@@ -1,5 +1,7 @@
 # 术语表
 
+> 当前状态：本文件保留为历史术语快照。当前目录职责与关键概念请先参见 `../README.md`、`../specs/README.md` 与 `../design-docs/index.md`。
+
 ## Skill A
 
 源码逆向生成 SRS 的能力层。负责从源码抽取需求事实，生成 SRS Markdown / PDF，并完成文档质量评审。

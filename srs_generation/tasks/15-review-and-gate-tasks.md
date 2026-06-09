@@ -1,5 +1,7 @@
 # Skill A Review 与 Gate 任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，其稳定规则现以 `../specs/skill-a-review-and-gate.md` 为准。
+
 ## 目标
 
 细化 Skill A 的自评、独立评审、人工复核和 gate 判定流程，确保生成的 SRS 质量可控。

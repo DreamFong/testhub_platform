@@ -1,5 +1,7 @@
 # 总编排 Skill 任务清单
 
+> 当前状态：本文件后续由 `../exec-plans/active/plan-0005-skill-c-and-orchestration-readiness.md` 接续；当前仍保留作历史拆分清单。
+
 ## 目标
 
 将 Skill A、Skill B、Skill C 串联为统一的 `ragflow-testhub-agent-workflow`，形成从源码到 TestHub 自动化闭环的可执行链路。

@@ -1,5 +1,7 @@
 # PDF 生成与文本层检查任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，其稳定规则现以 `../specs/skill-a-pdf-generation-and-text-check.md` 与 `../specs/artifact-run-standard.md` 为准。
+
 ## 目标
 
 定义 Skill A 中 Markdown → PDF 生成与基础可用性检查流程，确保 PDF 可以作为 Skill B 的可靠输入。

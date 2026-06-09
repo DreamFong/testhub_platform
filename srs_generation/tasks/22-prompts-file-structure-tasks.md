@@ -1,5 +1,7 @@
 # Prompt 文件结构任务清单
 
+> 当前状态：本文件的 Skill A / Skill B 已完成部分已被上收为 completed exec-plans；Skill C / orchestration 相关部分后续由 `../exec-plans/active/plan-0005-skill-c-and-orchestration-readiness.md` 接续。
+
 ## 目标
 
 规划 Skill A / B / C 的 prompt 文件拆分方式，避免所有逻辑堆在一个大 prompt 中。

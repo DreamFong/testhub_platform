@@ -1,5 +1,7 @@
 # Skill A 多样本验证任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，作为历史拆分清单保留。
+
 ## 目标
 
 用至少两个业务模块验证 Skill A 是否具备可迁移性，而不是只适配 RuoYi-Vue-Pro 用户管理案例。

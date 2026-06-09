@@ -1,5 +1,7 @@
 # 完成标准总表
 
+> 当前状态：本文件保留为历史完成标准快照。当前 live completion rules 与治理完成标准请以 `../DELIVERY.md` 为准。
+
 ## Skill A 完成标准
 
 - [ ] 有正式 Skill A spec

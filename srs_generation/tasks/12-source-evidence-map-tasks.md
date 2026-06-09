@@ -1,5 +1,7 @@
 # Source Evidence Map 任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，其稳定规则现以 `../specs/skill-a-source-evidence-map.md` 为准。
+
 ## 目标
 
 定义并实现 `source_evidence_map`，确保 Skill A 生成的 SRS 中关键需求、规则和结论都能追溯到源码依据。

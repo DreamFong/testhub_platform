@@ -2,6 +2,8 @@
 
 本目录用于拆解“源码逆向生成 SRS → RAGFlow 知识库验证 → TestHub 自动化闭环”的实施任务。
 
+> 当前状态：本目录已进入冻结迁移期，并默认视为只读历史层。历史任务文件继续保留用于追溯，但新增推进内容不再默认写入 `tasks/`。新的执行计划请写入 `../exec-plans/`，长期维护规则请以 `../DELIVERY.md` 为准，规范事实源请以 `../specs/` 为准。
+
 ## 文件说明
 
 - [00-implementation-roadmap.md](00-implementation-roadmap.md)：总实施路线图

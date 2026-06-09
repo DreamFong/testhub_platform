@@ -1,5 +1,7 @@
 # Skill A 评分表细化任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，其稳定规则现以 `../specs/skill-a-scorecard.md` 为准。
+
 ## 目标
 
 将 Skill A 的 25 分评分模型细化为可执行、可复核的评分表，供生成 Agent 自评、独立评审 Agent 和人工复核统一使用。

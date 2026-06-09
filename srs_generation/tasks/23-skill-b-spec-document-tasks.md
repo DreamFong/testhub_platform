@@ -1,5 +1,7 @@
 # Skill B 正式 Spec 文档编写任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0002-skill-b-hybrid-mvp-and-online-validation.md`，作为历史拆分清单保留。
+
 ## 目标
 
 把 Skill B 的知识库构建与检索验证流程整理为正式规范，建议路径为 `srs_generation/specs/skill-b-kb-validation.md`。

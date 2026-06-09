@@ -1,5 +1,7 @@
 # Scope 自动推断与确认机制任务清单
 
+> 当前状态：本文件已归并到 `../exec-plans/completed/plan-0001-skill-a-foundation-and-validation.md`，其稳定规则现以 `../specs/skill-a-scope-confirmation.md` 为准。
+
 ## 目标
 
 细化 Skill A 的 scope confirm gate，确保用户不需要预先完整定义模块范围，但正式生成前必须确认边界。

@@ -1,5 +1,7 @@
 # Skill C 正式 Spec 文档编写任务清单
 
+> 当前状态：本文件后续由 `../exec-plans/active/plan-0005-skill-c-and-orchestration-readiness.md` 接续；当前仍保留作历史拆分清单。
+
 ## 目标
 
 把执行约束增强层整理成正式规范，建议路径为 `srs_generation/specs/skill-c-execution-constraints.md`。

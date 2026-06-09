@@ -137,12 +137,12 @@ skill_b_status: offline_ready_pending_online | blocked_waiting_confirmation | bl
 ## 最小示例
 
 ```text
-skill_a_run_dir: srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-a/
-knowledge_base_name_hint: ruoyi-vue-pro-user-management-srs
+skill_a_run_dir: <run_dir>/skill-a/
+knowledge_base_name_hint: <project>-<module>-srs
 ```
 
 期望输出：
 
 ```text
-srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-b/
+<run_dir>/skill-b/
 ```

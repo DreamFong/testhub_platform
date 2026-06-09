@@ -131,7 +131,7 @@ Skill A 运行产物根目录。
 示例：
 
 ```text
-srs_generation/runs/ruoyi-vue-pro-erp-warehouse-validation-20260607/skill-a/
+<run_dir>/skill-a/
 ```
 
 #### srs-kb-friendly.md
@@ -428,45 +428,45 @@ online_retrieval_gate = blocked
 blocked_reason = RAGFlow unavailable | external action not approved | online step not executed yet
 ```
 
-## 11. Hybrid MVP 推荐样本
+## 11. Hybrid MVP 验证样本选择
 
 ### 11.1 首个样本
 
-建议优先使用：
+建议优先选择：
 
 ```text
-srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-a/
+<stable-simple-module-run>/skill-a/
 ```
 
-原因：
+选择标准：
 
-- 历史上下文最完整。
-- 已通过 Skill A 非研发可读性优化验证。
-- 适合作为 Skill B Hybrid MVP 的首个真实验证样例。
+- 历史上下文完整。
+- Skill A gate 已通过。
+- SRS 正文结构清晰，适合作为 Skill B Hybrid MVP 的首个真实验证样例。
 
 ### 11.2 第二个样本
 
-建议使用：
+建议选择：
 
 ```text
-srs_generation/runs/ruoyi-vue-pro-erp-warehouse-validation-20260607/skill-a/
+<structured-business-module-run>/skill-a/
 ```
 
-原因：
+选择标准：
 
-- 刚完成非研发可读性优化验证。
+- 业务结构与首个样本不同。
 - 技术细节已下沉到 `source-evidence-map.md`。
-- 适合作为第二个结构化业务样例。
+- 适合验证 Skill B 是否能迁移到不同业务结构。
 
 ### 11.3 第三个样本
 
-建议使用：
+建议选择：
 
 ```text
-srs_generation/runs/ruoyi-vue-pro-mes-stocktaking-task-validation-20260607/skill-a/
+<risk-heavy-module-run>/skill-a/
 ```
 
-原因：
+选择标准：
 
 - 包含 `risk-items.md`。
 - 适合验证风险项如何进入 retrieval 问题集与 handoff。

@@ -100,9 +100,12 @@ Treat PDF parse success as insufficient. Always inspect chunk structure and run 
 
 ## Workflow
 
-### 1. Read the Skill B reference
+### 1. Read the Skill B references
 
-Read `references/skill-b-knowledge-base-and-retrieval.md` before running a full Skill B flow.
+Read these references before running a full Skill B flow:
+
+- `references/skill-b-knowledge-base-and-retrieval.md`
+- `references/handoff-sync-policy.md`
 
 ### 2. Produce offline artifacts
 
@@ -167,7 +170,7 @@ When approved:
 6. Cross-check answers against `srs-kb-friendly.md` and `source-evidence-map.md`.
 7. Record real identifiers and results.
 
-Use `SRS_KB_ID` as the canonical handoff field. Mention `dataset_id` only when describing the raw RAGFlow API result.
+Use `SRS_KB_ID` as the authoritative handoff field. Mention `dataset_id` only when describing the raw RAGFlow API result.
 
 ### 7. Decide online gate
 

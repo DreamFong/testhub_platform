@@ -318,6 +318,7 @@ Important references:
 - `references/skill-a-scorecard.md`
 - `references/skill-a-review-and-gate.md`
 - `references/skill-a-pdf-generation-and-text-check.md`
+- `references/handoff-sync-policy.md`
 
 Important scripts:
 

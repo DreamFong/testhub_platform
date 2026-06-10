@@ -8,10 +8,25 @@ Skill A 与 Skill B 已被打包为可移植 Claude skill，导致 repo 内 `srs
 
 采用单向同步策略：
 
-- `srs_generation/specs/` 是 canonical source of truth。
-- `.claude/skills/*/references/` 是可移植执行副本。
-- 规范变更必须先修改 repo specs，再同步到对应 skill references。
-- 不允许只在 skill references 中独立演化规范语义。
+- `srs_generation/specs/` 是规范事实源。
+- `.claude/skills/*/references/` 是 Skill 可移植参考副本。
+- 规范变更必须先修改 repo specs，再同步到对应 Skill 参考副本。
+- 不允许只在 Skill 参考副本中独立演化规范语义。
+
+允许 Skill 参考副本做不改变规则含义的可移植改写：
+
+- 将项目内路径改为 Skill 包相对路径，例如 `<skill_dir>/scripts/...`。
+- 将真实 run 样例路径改为占位路径，例如 `<run_dir>/skill-a/`。
+- 将具体样例名称改为通用样例名称。
+- 将项目专属参考文档名称改为通用参考文档名称。
+
+不允许 Skill 参考副本改写：
+
+- 输入输出契约。
+- gate 判定规则。
+- handoff 字段。
+- `blocked`、`fail`、`pass` 等状态语义。
+- Skill A / Skill B / Skill C 的职责边界。
 
 当前涉及：
 

@@ -37,7 +37,7 @@
 
 - `doc-boundary-model.md`：定义 `specs / design-docs / exec-plans / runs / summary / handoff / tasks` 的职责边界。
 - `lifecycle-governance.md`：定义文档新增、执行、归档与状态收敛的生命周期。
-- `skill-reference-sync-strategy.md`：定义 repo specs 与 portable skill references 的同步策略。
+- `skill-reference-sync-strategy.md`：定义仓库正式规范与 Skill 可移植参考副本的同步策略。
 - `ragflow-carrier-selection.md`：记录主 SRS KB 的载体选择与非默认方案取舍。
 
 ## 当前说明

@@ -94,6 +94,7 @@ allowed_next_stage=skill_c
   - `exec-plans/completed/plan-0002-skill-b-hybrid-mvp-and-online-validation.md`
 - 新增延后计划：`exec-plans/active/plan-0005-skill-c-and-orchestration-readiness.md`
 - 旧 `tasks/` 已进入冻结迁移期，全部历史任务文件均已补充当前状态与归属去向提示
+- Skill A / Skill B 参考副本一致性检查已完成：正式规范是规范事实源，Skill 参考副本允许保留路径、样例名和参考文档名的可移植改写；gate、handoff、输入输出契约与状态语义不得漂移
 
 ## 4. 当前 canonical handoff
 

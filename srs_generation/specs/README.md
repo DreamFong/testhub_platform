@@ -10,7 +10,7 @@
 - 输入输出契约
 - gate 与判定标准
 - artifact 与 handoff 规则
-- 与 portable skill references 的同步规则
+- 与 Skill 可移植参考副本的同步规则
 
 ## 哪些内容属于 specs
 
@@ -49,9 +49,9 @@
 - `artifact-run-standard.md`
 - `handoff-sync-policy.md`
 
-## 与 portable skill references 的关系
+## 与 Skill 可移植参考副本的关系
 
-- `srs_generation/specs/` 是 canonical source of truth。
+- `srs_generation/specs/` 是规范事实源。
 - `.claude/skills/*/references/` 是可移植执行副本。
 - 若二者不一致，以 `srs_generation/specs/` 为准。
 - references 的同步属于受控复制，不应在 references 中独立演化规范。

@@ -754,7 +754,7 @@ entry_files:
   - AdminUserServiceImpl.java
 output_mode: kb-friendly
 scope_hint: 用户列表、详情、新增、编辑、删除、导入导出、重置密码、状态修改
-reference_srs: docs/ruoyi-user-management-srs-v2.pdf
+reference_srs: path/to/reference-srs.pdf
 ```
 
 ### 11.2 Scope 输出示例

@@ -128,7 +128,7 @@ Skill B 必须遵守以下原则：
 
 Skill A 运行产物根目录。
 
-示例：
+通用输入只要求提供某次 Skill A 的运行产物目录；下面路径仅作为当前项目内验证样例，不是通用默认要求：
 
 ```text
 srs_generation/runs/ruoyi-vue-pro-erp-warehouse-validation-20260607/skill-a/
@@ -428,45 +428,47 @@ online_retrieval_gate = blocked
 blocked_reason = RAGFlow unavailable | external action not approved | online step not executed yet
 ```
 
-## 11. Hybrid MVP 推荐样本
+## 11. Hybrid MVP 项目内验证样例
 
-### 11.1 首个样本
+本节仅记录当前项目内已经使用过或建议补充的验证样例，用于保留验证上下文；它们不是 Skill B 的通用默认输入要求，也不是其他项目必须复用的固定路径。
 
-建议优先使用：
+### 11.1 首个样例
+
+项目内优先验证样例：
 
 ```text
 srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-a/
 ```
 
-原因：
+选择原因：
 
 - 历史上下文最完整。
 - 已通过 Skill A 非研发可读性优化验证。
 - 适合作为 Skill B Hybrid MVP 的首个真实验证样例。
 
-### 11.2 第二个样本
+### 11.2 第二个样例
 
-建议使用：
+项目内补充验证样例：
 
 ```text
 srs_generation/runs/ruoyi-vue-pro-erp-warehouse-validation-20260607/skill-a/
 ```
 
-原因：
+选择原因：
 
 - 刚完成非研发可读性优化验证。
 - 技术细节已下沉到 `source-evidence-map.md`。
 - 适合作为第二个结构化业务样例。
 
-### 11.3 第三个样本
+### 11.3 第三个样例
 
-建议使用：
+项目内补充验证样例：
 
 ```text
 srs_generation/runs/ruoyi-vue-pro-mes-stocktaking-task-validation-20260607/skill-a/
 ```
 
-原因：
+选择原因：
 
 - 包含 `risk-items.md`。
 - 适合验证风险项如何进入 retrieval 问题集与 handoff。

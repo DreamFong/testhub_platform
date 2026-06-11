@@ -32,6 +32,7 @@ srs_generation/exec-plans/completed/plan-0003-sdd-doc-structure-governance-phase
 - Skill B 已打包为 `.claude/skills/srs-to-ragflow-kb/`
 - 当前 canonical Skill B handoff 已 online verified
 - 当前工作重点是骨架整改，不是继续外部系统执行
+- Skill A / Skill B 参考副本同步已完成，剩余差异仅保留可移植改写（如 `<skill_dir>`、`<run_dir>`、通用参考文档名），不涉及 gate、handoff 或输入输出契约语义漂移
 
 当前 canonical handoff：
 
@@ -61,6 +62,7 @@ srs_generation/runs/ruoyi-vue-pro-user-management-20260606-validation/skill-b-pa
 - 不要修改 `runs/` 下的事实产物
 - 不要把新推进内容重新写回旧 `tasks/`
 - 不要把设计解释继续堆进 `current-work-summary.md`
+- 不要重复发起 Skill A / Skill B 参考副本逐字一致性检查，除非 `specs/` 再次发生实质变化
 
 ## 5. 当前工作焦点
 
